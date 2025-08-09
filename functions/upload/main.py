@@ -62,7 +62,7 @@ def _save_to_supabase(
     })
 
 
-def main(
+def parse(
     url: str,
     html: str,
     publisher: pubsub_v1.PublisherClient,
@@ -129,7 +129,7 @@ def upload(page: Request) -> Response:
     publisher, topic_path = initialize_pubsub()
     supabase_client = initialize_subabase()
 
-    result = main(url, html, publisher, topic_path, supabase_client)
+    result = parse(url, html, publisher, topic_path, supabase_client)
 
     if isinstance(result, Exception):
         return jsonify({"message": f"Failed: {str(result)}", "status": 500})
