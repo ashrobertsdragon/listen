@@ -1,0 +1,17 @@
+[project]
+dependencies = [
+    "functions-framework>=3.9.2",
+    "google-cloud-pubsub>=2.31.1",
+    "supabase>=2.18.0",
+]
+description = "A personal podcaster from the Listen tab group in Chrome"
+name = "personal-podcast"
+readme = "README.md"
+requires-python = ">=3.13"
+version = "0.1.0"
+
+[dependency-groups]
+dev = ["dotenv>=0.9.9", "flask>=3.1.1"]
+
+[tool.uv.workspace]
+members = ["functions/upload"]
