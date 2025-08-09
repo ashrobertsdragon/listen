@@ -4,6 +4,8 @@ requires-python = ">=3.13"
 
 [manifest]
 members = [
+    "completion-notifier",
+    "merge-function",
     "page-upload",
     "personal-podcast",
 ]
@@ -111,6 +113,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/d8/53/6f443c9a4a8358a93
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6", size = 25335, upload-time = "2022-10-25T02:36:20.889Z" },
 ]
+
+[[package]]
+name = "completion-notifier"
+version = "0.1.0"
+source = { virtual = "functions/completed" }
 
 [[package]]
 name = "deprecation"
@@ -514,6 +521,16 @@ wheels = [
 ]
 
 [[package]]
+name = "merge-function"
+version = "0.1.0"
+source = { virtual = "functions/merge" }
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = []
+
+[[package]]
 name = "opentelemetry-api"
 version = "1.36.0"
 source = { registry = "https://pypi.org/simple" }
@@ -578,6 +595,7 @@ name = "personal-podcast"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "flask" },
     { name = "functions-framework" },
     { name = "google-cloud-pubsub" },
     { name = "supabase" },
@@ -586,21 +604,18 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "dotenv" },
-    { name = "flask" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "flask", specifier = ">=3.1.1" },
     { name = "functions-framework", specifier = ">=3.9.2" },
     { name = "google-cloud-pubsub", specifier = ">=2.31.1" },
     { name = "supabase", specifier = ">=2.18.0" },
 ]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "flask", specifier = ">=3.1.1" },
-]
+dev = [{ name = "dotenv", specifier = ">=0.9.9" }]
 
 [[package]]
 name = "postgrest"
