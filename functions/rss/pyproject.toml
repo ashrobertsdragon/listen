@@ -1,0 +1,6 @@
+[project]
+name = "rss-endpoint"
+version = "0.1.0"
+description = "Cloud Run Function for RSS feed"
+requires-python = ">=3.13"
+dependencies = []
