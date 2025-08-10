@@ -1,0 +1,9 @@
+[project]
+name = "tts-function"
+version = "0.1.0"
+description = "Service to perform Text-To-Speech of HTML text"
+requires-python = ">=3.13"
+dependencies = [
+    "google-cloud-texttospeech>=2.27.0",
+    "gtts>=2.5.4",
+]
