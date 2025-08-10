@@ -1,0 +1,9 @@
+[project]
+name = "merge-function"
+version = "0.1.0"
+description = "Cloud Run Function to merge audio stubs together"
+requires-python = ">=3.13"
+dependencies = []
+
+[dependency-groups]
+dev = []
