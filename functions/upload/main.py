@@ -32,7 +32,7 @@ def _get_title(html: str) -> str:
 
 
 def _publish_notification(
-    uid: str,
+    guid: str,
     url: str,
     title: str,
     paragraphs: list[str],
@@ -41,7 +41,7 @@ def _publish_notification(
 ) -> None:
     """Publishes a message to a Cloud Pub/Sub topic."""
     data = {
-        "id": uid,
+        "guid": guid,
         "url": url,
         "title": title,
         "paragraphs": paragraphs,
@@ -52,14 +52,14 @@ def _publish_notification(
 
 
 def _save_to_supabase(
-    uid: str,
+    guid: str,
     url: str,
     title: str,
     supabase_client: supabase.Client,
 ) -> None:
     """Saves data to Supabase."""
     supabase_client.table("listen").insert({
-        "id": uid,
+        "guid": guid,
         "url": url,
         "title": title,
         "created_at": datetime.datetime.now(),
@@ -83,13 +83,13 @@ def parse(
 
     title = _get_title(html)
 
-    uid = str(uuid.uuid4())
+    guid = str(uuid.uuid4())
 
     try:
         _publish_notification(
-            uid, url, title, paragraphs, publisher, topic_path
+            guid, url, title, paragraphs, publisher, topic_path
         )
-        _save_to_supabase(uid, url, title, supabase_client)
+        _save_to_supabase(guid, url, title, supabase_client)
         return True
     except (
         RuntimeError,

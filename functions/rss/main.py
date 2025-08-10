@@ -53,7 +53,7 @@ def _build_rss_feed(data: list[dict[str, str]]) -> str:
         <item>
           <title>{datum["title"]}</title>
           <enclosure url="{datum["audio_url"]}" type="audio/mpeg" />
-          <guid>{datum["id"]}</guid>
+          <guid>{datum["guid"]}</guid>
           <pubDate>{datum["created_at"]}</pubDate>
         </item>
         """)

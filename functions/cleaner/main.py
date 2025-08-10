@@ -30,7 +30,7 @@ def _get_expired(
     try:
         response = (
             supabase_client.table("listen")
-            .select("id, num_parts")
+            .select("guid")
             .lt(
                 "last_downloaded",
                 cutoff_date,
@@ -53,23 +53,20 @@ def _delete_files(
     except supabase.StorageException as e:
         logging.error(f"Failed to delete files from Supabase storage: {e}")
         return
-    logging.info(f"Deleted {len(paths)} files for {ids} from Supabase storage")
+    logging.info(f"Deleted {ids} from Supabase storage")
 
 
 def _build_paths(data: list[dict[str, str]]) -> tuple[list[str], list[str]]:
     """Builds paths for expired files."""
-    ids = []
+    guids = []
     paths = []
 
     for datum in data:
-        uid = datum["id"]
-        ids.append(uid)
-        paths.extend(
-            f"chunks/{uid}_part_{i:03d}.mp3"
-            for i in range(1, int(datum["num_parts"]) + 1)
-        )
+        guid = datum["id"]
+        guids.append(guid)
+        paths.append(f"{guid}.mp3")
 
-    return ids, paths
+    return guids, paths
 
 
 @functions_framework.http
@@ -83,5 +80,5 @@ def cleaner(request) -> None:
     if not data:
         return
 
-    ids, paths = _build_paths(data)
-    _delete_files(supabase_client, ids, paths)
+    guids, paths = _build_paths(data)
+    _delete_files(supabase_client, guids, paths)

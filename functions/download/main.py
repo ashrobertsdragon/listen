@@ -25,12 +25,12 @@ def _initialize_supabase() -> supabase.Client:
     return supabase.create_client(supabase_url, supabase_key)
 
 
-def _update_db(uid: str, db: supabase.Client) -> None:
+def _update_db(guid: str, db: supabase.Client) -> None:
     """Updates last_downloaded in database."""
     try:
         db.table("listen").update({
             "last_downloaded": datetime.datetime.now()
-        }).eq("id", uid).execute()
+        }).eq("guid", guid).execute()
     except supabase.SupabaseException as e:
         logging.error(f"Failed to update database: {e}")
 
@@ -49,14 +49,14 @@ def _download_audio(uid: str, db: supabase.Client) -> bytes | str:
 def download(request: Request) -> Response:
     """Downloads requested audio file from storage."""
     db = _initialize_supabase()
-    uid = request.args.get("guid")
-    if not uid:
+    guid = request.args.get("guid")
+    if not guid:
         logging.error(f"No guid provided in {request.args}")
         return Response("No guid provided", status=400)
 
-    audio = _download_audio(uid, db)
+    audio = _download_audio(guid, db)
     if isinstance(audio, str):
         return Response(audio, status=500)
 
-    _update_db(uid, db)
+    _update_db(guid, db)
     return Response(audio, content_type="audio/mpeg", status=200)
