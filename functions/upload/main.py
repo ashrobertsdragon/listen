@@ -19,10 +19,12 @@ class Page(TypedDict):
 
 
 def _get_paragraphs(html: str) -> list[str]:
+    """Get paragraphs from HTML body."""
     return justext.justext(html, justext.get_stoplist("English"))
 
 
 def _get_title(html: str) -> str:
+    """Get title from page HTML."""
     match = re.search(
         r"<title>(.*?)</title>", html, re.MULTILINE | re.IGNORECASE
     )
@@ -37,6 +39,7 @@ def _publish_notification(
     publisher: pubsub_v1.PublisherClient,
     topic_path: str,
 ) -> None:
+    """Publishes a message to a Cloud Pub/Sub topic."""
     data = {
         "id": uid,
         "url": url,
@@ -54,6 +57,7 @@ def _save_to_supabase(
     title: str,
     supabase_client: supabase.Client,
 ) -> None:
+    """Saves data to Supabase."""
     supabase_client.table("listen").insert({
         "id": uid,
         "url": url,
@@ -69,6 +73,7 @@ def parse(
     topic_path: str,
     supabase_client: supabase.Client,
 ) -> Exception | bool:
+    """Parses HTML and sends notification to Cloud Pub/Sub."""
     if not url or not html:
         return False
 
@@ -96,6 +101,7 @@ def parse(
 
 
 def initialize_pubsub() -> tuple[pubsub_v1.PublisherClient, str]:
+    """Initializes Cloud Pub/Sub publisher."""
     project_id = os.getenv("GCP_PROJECT", "")
     if not project_id:
         raise ValueError("GCP_PROJECT is not set")
@@ -111,6 +117,7 @@ def initialize_pubsub() -> tuple[pubsub_v1.PublisherClient, str]:
 
 
 def initialize_subabase() -> supabase.Client:
+    """Initializes Supabase client."""
     supabase_url = os.getenv("SUPABASE_URL")
     if not supabase_url:
         raise ValueError("SUPABASE_URL is not set")
@@ -122,6 +129,7 @@ def initialize_subabase() -> supabase.Client:
 
 @functions_framework.http
 def upload(page: Request) -> Response:
+    """Parses HTML and sends notification to Cloud Pub/Sub."""
     data: Page = page.get_json(force=True)
     url = data["url"]
     html = data["html"]
