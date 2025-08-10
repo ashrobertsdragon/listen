@@ -16,4 +16,9 @@ version = "0.1.0"
 dev = ["dotenv>=0.9.9"]
 
 [tool.uv.workspace]
-members = ["functions/completed", "functions/merge", "functions/upload"]
+members = [
+    "functions/completed",
+ "functions/merge",
+ "functions/upload",
+ "functions/cleaner",
+]
