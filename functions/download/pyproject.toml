@@ -1,0 +1,6 @@
+[project]
+name = "download-endpoint"
+version = "0.1.0"
+description = "Cloud Run Function for downloading individual audio files"
+requires-python = ">=3.13"
+dependencies = []
