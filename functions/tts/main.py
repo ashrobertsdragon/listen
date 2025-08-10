@@ -65,7 +65,8 @@ def _update_character_count(
     table: str,
 ) -> bool:
     try:
-        db.table("character_count").upsert({"count": count}).match({
+        db.table(table).upsert({
+            "count": count,
             "month": current_month,
             "year": current_year,
         }).execute()
