@@ -1,6 +1,0 @@
-[project]
-name = "completion-notifier"
-version = "0.1.0"
-description = "Cloud Run Function to signal audio ready for RSS feed"
-requires-python = ">=3.13"
-dependencies = []
