@@ -1,9 +1,17 @@
+import logging
 import os
 from typing import TypedDict
 
 import functions_framework
+import google.cloud.logging
 import supabase
-from flask import jsonify, Request, Response
+from cloudevents.http.event import CloudEvent
+
+
+log_client = google.cloud.logging.Client()
+log_client.setup_logging(
+    log_level=logging.INFO, excluded_loggers=("werkzeug",)
+)
 
 
 class Completion(TypedDict):
@@ -12,6 +20,7 @@ class Completion(TypedDict):
 
 
 def initialize_subabase() -> supabase.Client:
+    """Initializes Supabase client."""
     supabase_url = os.getenv("SUPABASE_URL")
     if not supabase_url:
         raise ValueError("SUPABASE_URL is not set")
@@ -21,15 +30,19 @@ def initialize_subabase() -> supabase.Client:
     return supabase.create_client(supabase_url, supabase_service_key)
 
 
-@functions_framework.http
-def completed(request: Request) -> Response:
-    data: Completion = request.get_json(force=True)
+@functions_framework.cloud_event
+def completed(event: CloudEvent) -> None:
+    """Updates audio_url in Supabase."""
+    _data = event.get_data()
+    if not _data:
+        logging.error("Pubsub message is empty")
+        return
+    data = Completion(**_data)
     supabase_client = initialize_subabase()
 
     try:
         supabase_client.table("listen").update({
             "audio_url": data["audio_url"]
         }).filter("id", "eq", data["uid"]).execute()
-        return jsonify({"message": "Success", "status": 204})
     except supabase.SupabaseException:
-        return jsonify({"message": "Failed", "status": 500})
+        logging.error(f"Failed to update {data['uid']} audio_url")
