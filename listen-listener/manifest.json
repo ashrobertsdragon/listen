@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Tab Group Listener",
+  "version": "1.0",
+  "description": "Watches tabs in a specific group and sends URLs to TTS service.",
+  "permissions": [
+    "tabs",
+    "tabGroups",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html",
+  "action": {
+    "default_title": "Tab Group Listener"
+  }
+}
