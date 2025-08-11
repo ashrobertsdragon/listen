@@ -3,7 +3,6 @@ import os
 import re
 import json
 import uuid
-from concurrent.futures import TimeoutError
 from typing import TypedDict
 
 import functions_framework
@@ -72,7 +71,7 @@ def parse(
     publisher: pubsub_v1.PublisherClient,
     topic_path: str,
     supabase_client: supabase.Client,
-) -> Exception | bool:
+) -> bool:
     """Parses HTML and sends notification to Cloud Pub/Sub."""
     if not url or not html:
         return False
@@ -85,19 +84,9 @@ def parse(
 
     guid = str(uuid.uuid4())
 
-    try:
-        _publish_notification(
-            guid, url, title, paragraphs, publisher, topic_path
-        )
-        _save_to_supabase(guid, url, title, supabase_client)
-        return True
-    except (
-        RuntimeError,
-        TimeoutError,
-        ValueError,
-        supabase.SupabaseException,
-    ) as e:
-        return e
+    _publish_notification(guid, url, title, paragraphs, publisher, topic_path)
+    _save_to_supabase(guid, url, title, supabase_client)
+    return True
 
 
 def initialize_pubsub() -> tuple[pubsub_v1.PublisherClient, str]:
@@ -127,6 +116,11 @@ def initialize_subabase() -> supabase.Client:
     return supabase.create_client(supabase_url, supabase_service_key)
 
 
+@functions_framework.errorhandler(Exception)
+def handle_error(error: Exception) -> Response:
+    return jsonify({"error": f"{str(error)}", "status": 500})
+
+
 @functions_framework.http
 def upload(page: Request) -> Response:
     """Parses HTML and sends notification to Cloud Pub/Sub."""
@@ -139,8 +133,6 @@ def upload(page: Request) -> Response:
 
     result = parse(url, html, publisher, topic_path, supabase_client)
 
-    if isinstance(result, Exception):
-        return jsonify({"message": f"Failed: {str(result)}", "status": 500})
     if not result:
-        return jsonify({"message": "Failed", "status": 400})
+        return jsonify({"error": "Upload failed", "status": 400})
     return jsonify({"message": "Success", "status": 204})
