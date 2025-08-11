@@ -74,7 +74,11 @@ def cleaner(request) -> None:
     """Deletes expired files from Supabase storage."""
     days = int(request.args.get("days", 7))
     cutoff_date = datetime.datetime.now() - datetime.timedelta(days=days)
-    supabase_client = initialize_supabase()
+    try:
+        supabase_client = initialize_supabase()
+    except ValueError as e:
+        logging.error(e)
+        return
 
     data = _get_expired(supabase_client, cutoff_date)
     if not data:
