@@ -31,17 +31,25 @@ chrome.tabGroups.onUpdated.addListener((group) => {
 });
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (!tab.groupId || tab.groupId === -1) return;
-  if (!changeInfo.url || changeInfo.url === NEW_TAB) return;
+  if ((!tab.groupId || tab.groupId === -1) && (!changeInfo.url || changeInfo.url === NEW_TAB)) {
+        return;
+  }
+  if (!changeInfo.url || changeInfo.url === NEW_TAB) {
+    return;
+  }
 
   const groupTitle = tabGroupCache[tab.groupId];
   if (groupTitle === tabGroupName) {
     await handleTab(tabId, tab.url, tab.groupId);
   }
 });
-
+if (!tab.groupId || tab.groupId === -1 || !tab.url || tab.url === NEW_TAB) {
+    return;
+  }
 chrome.tabs.onCreated.addListener(async (tab) => {
-  if (!tab.groupId || tab.groupId === -1 || !tab.url || tab.url === NEW_TAB) return;
+  if (!tab.groupId || tab.groupId === -1 || !tab.url || tab.url === NEW_TAB) {
+    return;
+  }
 
   const groupTitle = tabGroupCache[tab.groupId];
   if (groupTitle === tabGroupName) {
@@ -50,9 +58,13 @@ chrome.tabs.onCreated.addListener(async (tab) => {
 });
 
 async function handleTab(tabId, url, groupId) {
-  const tabsInGroup = await chrome.tabs.query({ groupId });
+  if (url === NEW_TAB) {
+    return;
+  }rome.tabs.query({ groupId });
 
-  if (url === NEW_TAB) return;
+  if (url === NEW_TAB) {
+    return;
+  }
 
   if (tabsInGroup.length === 1) {
     const newTab = await chrome.tabs.create({ url: NEW_TAB, active: false });

@@ -4,8 +4,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveBtn = document.getElementById("saveBtn");
 
   chrome.storage.sync.get(["endpoint", "tabGroupName"], (result) => {
-    if (result.endpoint) endpointInput.value = result.endpoint;
-    if (result.tabGroupName) tabGroupNameInput.value = result.tabGroupName;
+    if (result.endpoint && result.tabGroupName) {
+          tabGroupNameInput.value = result.tabGroupName;
+    }
+    if (result.tabGroupName) {
+      tabGroupNameInput.value = result.tabGroupName;
+    }
   });
 
   saveBtn.addEventListener("click", () => {
