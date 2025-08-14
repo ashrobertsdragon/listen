@@ -1,0 +1,9 @@
+variable "project_id" {}
+variable "region" { default = "us-central1" }
+variable "function_names_http" {
+  type = list(string)
+  default = ["download","upload","rss","cleaner"]
+}
+variable "runtime" { default = "python310" }
+variable "functions_sa_email" {}
+variable "scheduler_sa_email" {}
