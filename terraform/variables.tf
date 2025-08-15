@@ -5,4 +5,4 @@ variable "ssh_user" {}
 variable "ssh_public_key" {}
 variable "extension_remote_path" {}
 variable "supabase_url" {}
-variable "supabase_service_role_key" {}
+variable "supabase_key" {}

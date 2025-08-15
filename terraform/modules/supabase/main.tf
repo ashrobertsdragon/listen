@@ -1,5 +1,5 @@
 provider "supabase" {
-  supabase_service_role_key = var.supabase_service_role_key
+  supabase_key = var.supabase_key
   supabase_url     = var.supabase_url
 }
 

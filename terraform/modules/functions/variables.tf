@@ -7,3 +7,5 @@ variable "function_names_http" {
 variable "runtime" { default = "python310" }
 variable "functions_sa_email" {}
 variable "scheduler_sa_email" {}
+variable "supabase_url" {}
+variable "supabase_key" {}

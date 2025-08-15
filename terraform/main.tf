@@ -11,6 +11,8 @@ module "functions" {
   functions_sa_email = google_service_account.functions_sa.email
   scheduler_sa_email = google_service_account.scheduler_sa.email
   function_names_http = ["download","upload","tts","rss","cleaner"]
+  supabase_url = var.supabase_url
+  supabase_key = var.supabase_key
 }
 
 module "chrome_vm" {
@@ -27,5 +29,5 @@ module "chrome_vm" {
 module "supabase" {
   source = "./modules/supabase"
   supabase_url = var.supabase_url
-  supabase_service_role_key = var.supabase_service_role_key
+  supabase_key = var.supabase_key
 }

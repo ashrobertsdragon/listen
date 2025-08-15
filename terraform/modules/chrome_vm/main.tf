@@ -28,6 +28,11 @@ resource "google_compute_instance" "chrome_vm" {
     destination = "/tmp/patch-background.sh"
   }
 
+  provisioner "file" {
+    source      = "setup-chrome-vm.sh"
+    destination = "/tmp/setup-chrome-vm.sh"
+  }
+
   # Install packages and create systemd service; patching background.js uses the provided URL
   provisioner "remote-exec" {
     inline = [
