@@ -1,6 +1,6 @@
 resource "google_endpoints_service" "api_gateway" {
   service_name = "${var.project_id}.appspot.com"
-  openapi_config = templatefile("${path.module}/openapi-spec.yaml", {
+  openapi_config = templatefile("${path.module}/openapi-schema.yml", {
     project_id = var.project_id
     region     = var.region
   })
