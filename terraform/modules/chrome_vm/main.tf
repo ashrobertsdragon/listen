@@ -33,7 +33,7 @@ resource "google_compute_instance" "chrome_vm" {
     startup-script = templatefile("${path.module}/setup-chrome-vm.sh", {
       upload_function_url = var.upload_function_url
       api_key = var.api_key
-      ssh_user = var.ssh_user
+      SSH_USER = var.ssh_user
       extension_remote_path = var.extension_remote_path
     })
   }
