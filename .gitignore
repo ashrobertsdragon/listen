@@ -200,3 +200,4 @@ pyrightconfig.json
 .tfvars
 .terraform/
 *.tfstate*
+*.zip
