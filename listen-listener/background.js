@@ -13,10 +13,22 @@ chrome.storage.sync.get(["endpoint"], (result) => {
   }
 });
 
+chrome.storage.sync.get(["groupName"], (result) => {
+  if (result.groupName) {
+    groupName = result.groupName;
+    console.log("Loaded group name:", groupName);
+  }
+});
+
 chrome.storage.onChanged.addListener((changes) => {
   if (changes.endpoint) {
     endpoint = changes.endpoint.newValue;
     console.log("Endpoint updated to:", endpoint);
+  }
+
+  if (changes.groupName) {
+    groupName = changes.groupName.newValue;
+    console.log("Group name updated to:", groupName);
   }
 });
 
@@ -60,7 +72,8 @@ chrome.tabs.onCreated.addListener(async (tab) => {
 async function handleTab(tabId, url, groupId) {
   if (url === NEW_TAB) {
     return;
-  }rome.tabs.query({ groupId });
+  }
+  const tabsInGroup = await chrome.tabs.query({ groupId });
 
   if (url === NEW_TAB) {
     return;

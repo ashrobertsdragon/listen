@@ -4,8 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveBtn = document.getElementById("saveBtn");
 
   chrome.storage.sync.get(["endpoint", "tabGroupName"], (result) => {
-    if (result.endpoint && result.tabGroupName) {
-          tabGroupNameInput.value = result.tabGroupName;
+    if (result.endpoint) {
+      endpointInput.value = result.endpointName;
     }
     if (result.tabGroupName) {
       tabGroupNameInput.value = result.tabGroupName;
