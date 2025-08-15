@@ -1,6 +1,5 @@
 import os
 import logging
-import tempfile
 import textwrap
 
 import functions_framework
@@ -70,16 +69,6 @@ def _build_rss_feed(data: list[dict[str, str]]) -> str:
             </channel>
           </rss>
     """)
-
-
-def _save_rss_feed(rss_feed: str) -> str:
-    """Saves RSS feed to a temporary file."""
-    tempdir = tempfile.mkdtemp()
-    rss_file = os.path.join(tempdir, "rss.xml")
-    with open(rss_file, "w") as f:
-        f.write(rss_feed)
-    return rss_file
-
 
 @functions_framework.http
 def rss(_: Request) -> Response:
