@@ -1,5 +1,3 @@
-variable "project_id" {}
-
 resource "google_service_account" "functions_sa" {
   account_id   = "functions-sa"
   display_name = "Service Account for Cloud Functions"

@@ -1,5 +1,5 @@
 variable "project_id" {}
-variable "region" { default = "us-central1" }
+variable "region" { default = "us-east1" }
 variable "function_names_http" {
   type = list(string)
   default = ["download","upload","rss","cleaner"]

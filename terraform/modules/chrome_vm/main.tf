@@ -2,6 +2,7 @@ resource "google_compute_instance" "chrome_vm" {
   name         = "chrome-vm"
   machine_type = "e2-micro"
   zone         = var.zone
+  project      = var.project_id
 
   boot_disk {
     initialize_params {
@@ -24,11 +25,6 @@ resource "google_compute_instance" "chrome_vm" {
   }
 
   provisioner "file" {
-    source      = "patch-background.sh"
-    destination = "/tmp/patch-background.sh"
-  }
-
-  provisioner "file" {
     source      = "setup-chrome-vm.sh"
     destination = "/tmp/setup-chrome-vm.sh"
   }
@@ -36,12 +32,11 @@ resource "google_compute_instance" "chrome_vm" {
   # Install packages and create systemd service; patching background.js uses the provided URL
   provisioner "remote-exec" {
     inline = [
+      "export upload_function_url='${var.upload_function_url}'",
+      "export api_key='${var.api_key}'",
+      "export SSH_USER='${var.ssh_user}'",
       "sudo chmod +x /tmp/setup-chrome-vm.sh",
       "sudo /tmp/setup-chrome-vm.sh"
     ]
   }
-}
-
-output "chrome_vm_ip" {
-  value = google_compute_instance.chrome_vm.network_interface[0].access_config[0].nat_ip
 }

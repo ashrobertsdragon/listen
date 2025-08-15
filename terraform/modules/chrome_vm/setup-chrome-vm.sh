@@ -1,11 +1,18 @@
 #!/bin/bash
-
-export SSH_USER=${SSH_USER:-defaultuser}
-
-sudo apt-get update
-sudo apt-get install -y xvfb chromium chromium-driver novnc websockify x11vnc
+sudo apt-get update -y
+sudo apt-get install -y wget unzip xvfb libnss3 libxss1 \
+  libappindicator3-1 libindicator7 fonts-liberation libasound2 \
+  libatk-bridge2.0-0 libatk1.0-0 libcups2 libgbm1 libgtk-3-0 \
+  libnspr4 novnc websockify x11vnc
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+apt install -y ./google-chrome-stable_current_amd64.deb
 
 sudo mkdir -p /opt/chrome-profile && sudo chown ${SSH_USER}:${SSH_USER} /opt/chrome-profile
+
+sudo mkdir -p ${extension_remote_path} && sudo chown ${SSH_USER}:${SSH_USER} ${extension_remote_path}
+git clone https://github.com/ashrobertsdragon/listen.git
+cp listen/listen-listener ${extension_remote_path}
+sudo rm -rf listen
 
 sudo cp /tmp/chrome-remote.sh /opt/chrome-remote.sh
 sudo chmod +x /opt/chrome-remote.sh
@@ -29,5 +36,4 @@ sudo systemctl daemon-reload
 sudo systemctl enable chrome-remote.service
 sudo systemctl start chrome-remote.service
 
-sudo chmod +x /tmp/patch-background.sh
-sudo /tmp/patch-background.sh
+sed -i "s|let endpoint = null;|let endpoint = '${upload_function_url}?key=${api_key}';|" ${extension_remote_path}/background.js

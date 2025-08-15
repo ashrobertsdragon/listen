@@ -1,5 +1,4 @@
 #!/bin/bash
-
 export DISPLAY=:99
 
 if ! pgrep -f "Xvfb :99" >/dev/null; then
@@ -17,4 +16,10 @@ if ! pgrep -f "x11vnc.*:99" >/dev/null; then
   sleep 2
 fi
 
-chromium --no-sandbox --user-data-dir=/opt/chrome-profile
+google-chrome \
+  --headless=new \
+  --disable-gpu \
+  --no-sandbox \
+  --remote-debugging-port=9222 \
+  --load-extension=${extension_remote_path} \
+  --user-data-dir=/opt/chrome-profile
