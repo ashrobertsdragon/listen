@@ -35,9 +35,9 @@ def _update_db(guid: str, db: supabase.Client) -> None:
         logging.error(f"Failed to update database: {e}")
 
 
-def _download_audio(uid: str, db: supabase.Client) -> bytes | str:
+def _download_audio(uid: str, db: supabase.Client, bucket: str = "listen_tab_podcast") -> bytes | str:
     try:
-        response = db.storage.from_("listen").download(uid)
+        response = db.storage.from_(bucket).download(uid)
     except supabase.SupabaseException as e:
         logging.error(f"Failed to download audio: {e}")
         return f"Failed to download audio: {e}"

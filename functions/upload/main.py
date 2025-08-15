@@ -55,9 +55,10 @@ def _save_to_supabase(
     url: str,
     title: str,
     supabase_client: supabase.Client,
+    table: str = "listen",
 ) -> None:
     """Saves data to Supabase."""
-    supabase_client.table("listen").insert({
+    supabase_client.table(table).insert({
         "guid": guid,
         "url": url,
         "title": title,

@@ -33,7 +33,6 @@ def _get_current_period() -> tuple[str, str]:
 
 
 def _get_character_count(
-    count: int,
     current_month: str,
     current_year: str,
     db: supabase.Client,
@@ -85,7 +84,7 @@ def _add_character_count(
     current_month, current_year = _get_current_period()
 
     count = _get_character_count(
-        text_length, current_month, current_year, db, table
+        current_month, current_year, db, table
     )
     if count is None:
         return False
@@ -111,7 +110,7 @@ def _update_db(
 
 
 def _upload_audio(
-    guid: str, audio_file: str, db: supabase.Client, bucket: str = "listen"
+    guid: str, audio_file: str, db: supabase.Client, bucket: str = "listen_tab_podcast"
 ) -> str | None:
     """Uploads audio to storage bucket."""
     try:

@@ -46,10 +46,10 @@ def _get_expired(
 
 
 def _delete_files(
-    supabase_client: supabase.Client, ids: list[str], paths: list[str]
+    supabase_client: supabase.Client, ids: list[str], paths: list[str], bucket: str = "listen_tab_podcast"
 ) -> None:
     try:
-        supabase_client.storage.from_("listen").remove(paths)
+        supabase_client.storage.from_(bucket).remove(paths)
     except supabase.StorageException as e:
         logging.error(f"Failed to delete files from Supabase storage: {e}")
         return

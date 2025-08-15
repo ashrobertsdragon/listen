@@ -32,7 +32,7 @@ def _get_audio_urls(
     try:
         response = (
             supabase_client.table("listen")
-            .select("title, created_at, id, audio_url")
+    .select("title, created_at, guid")
             .not_.is_("audio_url", "null")
             .execute()
         )
@@ -51,7 +51,7 @@ def _build_rss_feed(data: list[dict[str, str]]) -> str:
         textwrap.dedent(f"""\
         <item>
           <title>{datum["title"]}</title>
-          <enclosure url="{datum["audio_url"]}" type="audio/mpeg" />
+          <enclosure url="download/{datum["guid"]}" type="audio/mpeg" />
           <guid>{datum["guid"]}</guid>
           <pubDate>{datum["created_at"]}</pubDate>
         </item>
