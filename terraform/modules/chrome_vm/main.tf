@@ -42,6 +42,7 @@ resource "google_compute_instance" "chrome_vm" {
 resource "local_file" "reconnect_script" {
   content = templatefile("${path.module}/reconnect.sh.tpl", {
     SSH_USER = var.ssh_user
+    VM_IP    = google_compute_instance.chrome_vm.network_interface[0].access_config[0].nat_ip
   })
   filename = "${path.root}/reconnect.sh"
   file_permission = "0755"
