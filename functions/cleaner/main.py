@@ -62,7 +62,7 @@ def _build_paths(data: list[dict[str, str]]) -> tuple[list[str], list[str]]:
     paths = []
 
     for datum in data:
-        guid = datum["id"]
+        guid = datum["guid"]
         guids.append(guid)
         paths.append(f"{guid}.mp3")
 
