@@ -17,9 +17,9 @@ def initialize_supabase() -> supabase.Client:
     supabase_url = os.getenv("SUPABASE_URL")
     if not supabase_url:
         raise ValueError("SUPABASE_URL is not set")
-    supabase_service_key = os.getenv("SUPABASE_SERVICE_KEY")
+    supabase_service_key = os.getenv("SUPABASE_KEY")
     if not supabase_service_key:
-        raise ValueError("SUPABASE_SERVICE_KEY is not set")
+        raise ValueError("SUPABASE_KEY is not set")
     return supabase.create_client(supabase_url, supabase_service_key)
 
 

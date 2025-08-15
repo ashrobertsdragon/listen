@@ -27,7 +27,7 @@ def _get_title(html: str) -> str:
     match = re.search(
         r"<title>(.*?)</title>", html, re.MULTILINE | re.IGNORECASE
     )
-    return match.group(1).strip() if match else "Untitled"
+    return match[1].strip() if match else "Untitled"
 
 
 def _publish_notification(
@@ -105,7 +105,7 @@ def initialize_pubsub() -> tuple[pubsub_v1.PublisherClient, str]:
     return publisher, topic_path
 
 
-def initialize_subabase() -> supabase.Client:
+def initialize_supabase() -> supabase.Client:
     """Initializes Supabase client."""
     supabase_url = os.getenv("SUPABASE_URL")
     if not supabase_url:
@@ -129,10 +129,8 @@ def upload(page: Request) -> Response:
     html = data["html"]
 
     publisher, topic_path = initialize_pubsub()
-    supabase_client = initialize_subabase()
+    supabase_client = initialize_supabase()
 
-    result = parse(url, html, publisher, topic_path, supabase_client)
-
-    if not result:
-        return jsonify({"error": "Upload failed", "status": 400})
-    return jsonify({"message": "Success", "status": 204})
+    if parse(url, html, publisher, topic_path, supabase_client):
+        return jsonify({"message": "Success", "status": 204})
+    return jsonify({"error": "Upload failed", "status": 400})

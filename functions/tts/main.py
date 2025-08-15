@@ -49,9 +49,7 @@ def _get_character_count(
             })
             .execute()
         )
-        if response and response.count:
-            return response.data[0]["count"]
-        return 0
+        return response.data[0]["count"] if response and response.count else 0
     except supabase.SupabaseException as e:
         logging.error(f"Failed to insert data into Supabase: {e}")
         return None
@@ -97,10 +95,7 @@ def _add_character_count(
     updated = _update_character_count(
         count, current_month, current_year, db, table
     )
-    if not updated:
-        return False
-
-    return count < max_count
+    return count < max_count if updated else False
 
 
 def _update_db(
@@ -117,11 +112,12 @@ def _update_db(
 
 def _upload_audio(
     guid: str, audio_file: str, db: supabase.Client, bucket: str = "listen"
-) -> None:
+) -> str | None:
     """Uploads audio to storage bucket."""
     try:
         with open(audio_file, "rb") as f:
-            db.storage.from_(bucket).upload(file=f, path=f"{guid}.mp3")
+            response = db.storage.from_(bucket).upload(file=f, path=f"{guid}.mp3")
+            return response.path
     except supabase.SupabaseException as e:
         logging.error(f"Failed to upload audio: {e}")
 
@@ -143,18 +139,18 @@ def _generate_cloud_tts_audio(text: str, guid: str) -> str | None:
     from google.cloud import texttospeech
     from google.api_core.exceptions import GoogleAPIError
 
-    input = texttospeech.SynthesisInput(text=text)
-    voice = texttospeech.VoiceSelectionParams(
+    tts_input = texttospeech.SynthesisInput(text=text)
+    tts_voice = texttospeech.VoiceSelectionParams(
         language_code="en-US", name="en-US-Standard-H"
     )
-    config = texttospeech.AudioConfig(
+    tts_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.MP3
     )
 
     client = texttospeech.TextToSpeechClient()
     try:
         response = client.synthesize_speech(
-            input=input, voice=voice, audio_config=config
+            input=tts_input, voice=tts_voice, audio_config=tts_config
         )
     except GoogleAPIError as e:
         logging.error(f"Failed to generate audio with Cloud TTS: {e}")
@@ -211,5 +207,5 @@ def tts(event: CloudEvent) -> None:
         logging.error("Failed to generate audio")
         return
 
-    _upload_audio(guid, audio_file, supabase_client)
-    _update_db(guid, audio_file, supabase_client)
+    if bucket_path :=_upload_audio(guid, audio_file, supabase_client):
+        _update_db(guid, bucket_path, supabase_client)

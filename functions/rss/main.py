@@ -20,10 +20,10 @@ def _initialize_supabase() -> supabase.Client:
     supabase_url = os.getenv("SUPABASE_URL")
     if not supabase_url:
         raise ValueError("SUPABASE_URL is not set")
-    supabase_service_key = os.getenv("SUPABASE_SERVICE_KEY")
-    if not supabase_service_key:
-        raise ValueError("SUPABASE_SERVICE_KEY is not set")
-    return supabase.create_client(supabase_url, supabase_service_key)
+    supabase_key = os.getenv("SUPABASE_KEY")
+    if not supabase_key:
+        raise ValueError("SUPABASE_KEY is not set")
+    return supabase.create_client(supabase_url, supabase_key)
 
 
 def _get_audio_urls(
@@ -88,10 +88,9 @@ def rss(_: Request) -> Response:
 
     data = _get_audio_urls(supabase_client)
     rss_feed = _build_rss_feed(data)
-    rss_file = _save_rss_feed(rss_feed)
 
     return Response(
-        rss_file,
+        rss_feed,
         status=200,
         mimetype="text/xml",
         content_type="application/rss+xml",
