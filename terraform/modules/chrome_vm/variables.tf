@@ -9,3 +9,4 @@ variable "api_key" {
 variable "extension_remote_path" {
   description = "Full path on VM to listen-listener extension folder (background.js will be patched there)."
 }
+variable "ssh_private_key" {}

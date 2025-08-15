@@ -34,6 +34,7 @@ module "chrome_vm" {
   zone       = var.zone
   ssh_user   = var.ssh_user
   ssh_public_key = var.ssh_public_key
+  ssh_private_key = var.ssh_private_key
   upload_function_url = module.functions.upload_function_url
   api_key = module.endpoints.api_key
   extension_remote_path = var.extension_remote_path

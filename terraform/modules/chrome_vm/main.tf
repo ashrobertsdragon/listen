@@ -15,28 +15,34 @@ resource "google_compute_instance" "chrome_vm" {
     access_config {}
   }
 
-  metadata = {
-    ssh-keys = "${var.ssh_user}:${file(var.ssh_public_key)}"
+  connection {
+    type        = "ssh"
+    user        = var.ssh_user
+    private_key = file(var.ssh_private_key)
+    host        = self.network_interface[0].access_config[0].nat_ip
+    timeout     = "2m"
   }
 
   provisioner "file" {
-    source      = "chrome-remote.sh"
+    source      = "${path.module}chrome-remote.sh"
     destination = "/tmp/chrome-remote.sh"
   }
 
-  provisioner "file" {
-    source      = "setup-chrome-vm.sh"
-    destination = "/tmp/setup-chrome-vm.sh"
+  metadata = {
+    ssh-keys = "${var.ssh_user}:${file(var.ssh_public_key)}"
+    startup-script = templatefile("${path.module}/setup-chrome-vm.sh", {
+      upload_function_url = var.upload_function_url
+      api_key = var.api_key
+      ssh_user = var.ssh_user
+      extension_remote_path = var.extension_remote_path
+    })
   }
+}
 
-  # Install packages and create systemd service; patching background.js uses the provided URL
-  provisioner "remote-exec" {
-    inline = [
-      "export upload_function_url='${var.upload_function_url}'",
-      "export api_key='${var.api_key}'",
-      "export SSH_USER='${var.ssh_user}'",
-      "sudo chmod +x /tmp/setup-chrome-vm.sh",
-      "sudo /tmp/setup-chrome-vm.sh"
-    ]
-  }
+resource "local_file" "reconnect_script" {
+  content = templatefile("${path.module}/reconnect.sh.tpl", {
+    SSH_USER = var.ssh_user
+  })
+  filename = "${path.root}/reconnect.sh"
+  file_permission = "0755"
 }
