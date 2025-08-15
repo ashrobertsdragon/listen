@@ -8,6 +8,8 @@ locals {
   }
 }
 
+
+
 resource "google_storage_bucket" "functions_bucket" {
   name                        = "${var.project_id}-functions-source"
   location                    = var.region

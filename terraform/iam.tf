@@ -34,3 +34,18 @@ output "functions_service_account_email" {
 output "scheduler_service_account_email" {
   value = google_service_account.scheduler_sa.email
 }
+
+resource "google_service_account" "api_gateway_sa" {
+  account_id   = "api-gateway-sa"
+  display_name = "Service Account for API Gateway"
+}
+
+resource "google_project_iam_member" "api_gateway_invoker" {
+  project = var.project_id
+  role    = "roles/cloudfunctions.invoker"
+  member  = "serviceAccount:${google_service_account.api_gateway_sa.email}"
+}
+
+output "api_gateway_service_account_email" {
+  value = google_service_account.api_gateway_sa.email
+}

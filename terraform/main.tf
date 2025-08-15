@@ -31,3 +31,9 @@ module "supabase" {
   supabase_url = var.supabase_url
   supabase_key = var.supabase_key
 }
+
+module "endpoints" {
+  source = "./modules/endpoints"
+  project_id = var.project_id
+  region = var.region
+}

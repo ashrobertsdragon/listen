@@ -1,0 +1,60 @@
+swagger: "2.0"
+info:
+  title: "Personal TTS API"
+  description: "Text-to-Speech podcast system API"
+  version: "1.0.0"
+host: "${project_id}.appspot.com"
+schemes:
+  - "https"
+produces:
+  - "application/json"
+
+securityDefinitions:
+  api_key:
+    type: "apiKey"
+    name: "key"
+    in: "query"
+
+paths:
+  /upload:
+    post:
+      summary: "Upload webpage for TTS processing"
+      operationId: "upload"
+      security:
+        - api_key: []
+      x-google-backend:
+        address: "https://${region}-${project_id}.cloudfunctions.net/upload"
+      responses:
+        200:
+          description: "Success"
+        400:
+          description: "Bad request"
+
+  /rss:
+    get:
+      summary: "Get RSS feed"
+      operationId: "rss"
+      security:
+        - api_key: []
+      x-google-backend:
+        address: "https://${region}-${project_id}.cloudfunctions.net/rss"
+      responses:
+        200:
+          description: "RSS feed"
+
+  /download:
+    get:
+      summary: "Download audio file"
+      operationId: "download"
+      security:
+        - api_key: []
+      parameters:
+        - name: "guid"
+          in: "query"
+          required: true
+          type: "string"
+      x-google-backend:
+        address: "https://${region}-${project_id}.cloudfunctions.net/download"
+      responses:
+        200:
+          description: "Audio file"
