@@ -39,3 +39,9 @@ module "chrome_vm" {
   api_key = module.endpoints.api_key
   extension_remote_path = var.extension_remote_path
 }
+
+module "postgres" {
+  source               = "./modules/postgres"
+  supabase_db_password = var.supabase_db_password
+  supabase_db_host     = module.supabase.supabase_db_host
+}
