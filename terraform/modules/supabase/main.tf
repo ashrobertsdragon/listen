@@ -13,3 +13,13 @@ data "supabase_apikeys" "personal_podcast" {
   project_ref = supabase_project.personal_podcast.id
 }
 
+resource "terraform_data" "database_tables" {
+  depends_on = [ supabase_project.personal_podcast ]
+
+  for_each = toset(var.queries)
+
+  provisioner "local-exec" {
+    command = "psql  postgres://postgres:${var.supabase_db_password}@${supabase_project.personal_podcast.id}.supabase.co:5432/postgres?sslmode=require -f ${path.module}/${each.value}"
+  }
+
+}
