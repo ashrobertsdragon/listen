@@ -1,6 +1,6 @@
 #!/bin/bash
 sudo apt-get update -y
-sudo apt-get install -y wget unzip xvfb libnss3 libxss1 \
+sudo apt-get install -y jq wget unzip xvfb libnss3 libxss1 \
   libappindicator3-1 libindicator7 fonts-liberation libasound2 \
   libatk-bridge2.0-0 libatk1.0-0 libcups2 libgbm1 libgtk-3-0 \
   libnspr4 novnc websockify x11vnc

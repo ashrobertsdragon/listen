@@ -58,10 +58,10 @@ CHROME_PID=$!
 check_tabs_remaining() {
     local response
     response=$(curl -s http://localhost:9222/json/list 2>/dev/null)
-    
+
     if [[ $? -eq 0 ]] && [[ -n "$response" ]]; then
         local active_tabs
-        active_tabs=$(echo "$response" | grep -c '"url".*http' || true)
+        active_tabs=$(echo "$response" | jq '[.[] | select(.url | startswith("http"))] | length')
         echo "$active_tabs"
     else
         echo "0"
@@ -78,7 +78,6 @@ while kill -0 $CHROME_PID 2>/dev/null; do
     TABS_REMAINING=$(check_tabs_remaining)
     
     if [[ "$TABS_REMAINING" -eq 0 ]]; then
-        # Wait a bit more to make sure no new tabs are being added
         sleep 30
         TABS_REMAINING=$(check_tabs_remaining)
         if [[ "$TABS_REMAINING" -eq 0 ]]; then
