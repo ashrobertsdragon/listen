@@ -8,8 +8,6 @@ locals {
   }
 }
 
-
-
 resource "google_storage_bucket" "functions_bucket" {
   name                        = "${var.project_id}-functions-source"
   location                    = var.region
@@ -24,7 +22,7 @@ data "archive_file" "function_zip" {
 }
 
 resource "google_storage_bucket_object" "function_object" {
-  for_each = toset(concat(var.function_names_http, ["tts"]))
+  for_each = concat(var.function_names_http, ["tts"])
   name     = "${each.value}-source-${data.archive_file.function_zip[each.value].output_md5}.zip"
   bucket   = google_storage_bucket.functions_bucket.name
   source   = data.archive_file.function_zip[each.value].output_path
@@ -80,7 +78,7 @@ resource "google_cloudfunctions_function" "tts_function" {
 }
 
 resource "google_cloud_scheduler_job" "cleaner_job" {
-  name      = "trigger-cleaner"
+  name      = "cleaner-trigger"
   schedule  = "0 0 */7 * *"
   time_zone = "UTC"
 
@@ -90,5 +88,16 @@ resource "google_cloud_scheduler_job" "cleaner_job" {
     oidc_token {
       service_account_email = var.scheduler_sa_email
     }
+  }
+}
+
+resource "null_resource" "wait_for_scheduler" {
+  depends_on = [
+    google_cloudfunctions_function.http_functions,
+    google_cloudfunctions_function.tts_function
+  ]
+
+  provisioner "local-exec" {
+    command = "rm -rf ${path.module}/tmp"
   }
 }
