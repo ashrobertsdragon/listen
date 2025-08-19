@@ -200,5 +200,5 @@ pyrightconfig.json
 .tfvars
 .terraform/
 *.tfstate*
-*.zip
+terraform/**/*.zip
 terraform-key.json
