@@ -5,6 +5,18 @@ module "supabase" {
   supabase_db_password = var.supabase_db_password
 }
 
+module "postgresql" {
+  source = "./modules/postgresql"
+  supabase_db_host = module.supabase.supabase_db_host
+  supabase_db_password = var.supabase_db_password
+}
+
+module "http" {
+  source = "./modules/http"
+  supabase_project_id = module.supabase.supabase_project_id
+  supabase_key = module.supabase.supabase_key
+}
+
 provider "google" {
   credentials = file("terraform-key.json")
   project = var.project_id

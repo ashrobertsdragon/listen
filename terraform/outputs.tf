@@ -3,5 +3,6 @@ output "upload_function_url" {
 }
 
 output "supabase_bucket" {
-  value = module.supabase.listen_tab_podcast_bucket
+  value = module.http.supabase_bucket_name
 }
+

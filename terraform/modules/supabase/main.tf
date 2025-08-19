@@ -9,17 +9,12 @@ resource "supabase_project" "personal_podcast" {
   }
 }
 
-data "supabase_apikeys" "personal_podcast" {
-  project_ref = supabase_project.personal_podcast.id
+resource "time_sleep" "wait_for_project" {
+  depends_on = [supabase_project.personal_podcast]
+  create_duration = "60s" # wait 60 seconds before trying to fetch keys
 }
 
-resource "terraform_data" "database_tables" {
-  depends_on = [ supabase_project.personal_podcast ]
-
-  for_each = toset(var.queries)
-
-  provisioner "local-exec" {
-    command = "psql  postgres://postgres:${var.supabase_db_password}@${supabase_project.personal_podcast.id}.supabase.co:5432/postgres?sslmode=require -f ${path.module}/${each.value}"
-  }
-
+data "supabase_apikeys" "personal_podcast" {
+  project_ref = supabase_project.personal_podcast.id
+  depends_on  = [time_sleep.wait_for_project]
 }
