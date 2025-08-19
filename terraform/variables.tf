@@ -13,12 +13,12 @@ variable "ssh_user" {
   default = "debian"
   type = string
 }
-variable "ssh_public_key" {
+variable "ssh_public_key_file" {
   sensitive = true
   type = string
   default = "C:/Users/ashro/.ssh/id_rsa.pub"
 }
-variable "ssh_private_key" {
+variable "ssh_private_key_file" {
   sensitive = true
   type = string
   default = "C:/Users/ashro/.ssh/id_rsa"
@@ -38,4 +38,9 @@ variable "supabase_organization_id" {
 variable "supabase_access_token" {
   sensitive = true
   type = string
+}
+variable "vm_period" {
+  default = "6H"
+  type = string
+  description = "Period between VM restarts (6H = 6 hours, 1D = 1 day, 15m = 15 minutes)"
 }

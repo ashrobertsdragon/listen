@@ -1,5 +1,16 @@
 #!/bin/bash
 export DISPLAY=:99
+EXTENSION_PATH="${extension_remote_path}"
+PROFILE_DIR="/opt/chrome-profile"
+
+cleanup() {
+    pkill -f "google-chrome.*--load-extension" 2>/dev/null || true
+    pkill -f "Xvfb :99" 2>/dev/null || true
+    pkill -f "x11vnc" 2>/dev/null || true
+    pkill -f "websockify" 2>/dev/null || true
+}
+
+trap cleanup EXIT
 
 if ! pgrep -f "Xvfb :99" >/dev/null; then
   Xvfb :99 -screen 0 1280x800x24 &
@@ -17,9 +28,63 @@ if ! pgrep -f "x11vnc.*:99" >/dev/null; then
 fi
 
 google-chrome \
-  --headless=new \
+  --display=:99 \
   --disable-gpu \
   --no-sandbox \
+  --disable-dev-shm-usage \
+  --disable-extensions-except="$EXTENSION_PATH" \
+  --load-extension="$EXTENSION_PATH" \
+  --disable-component-extensions-with-background-pages \
+  --user-data-dir="$PROFILE_DIR" \
   --remote-debugging-port=9222 \
-  --load-extension=${extension_remote_path} \
-  --user-data-dir=/opt/chrome-profile
+  --disable-features=Translate \
+  --no-default-browser-check \
+  --disable-background-timer-throttling \
+  --no-first-run \
+  --disable-default-apps \
+  --ash-no-nudges \
+  --disable-search-engine-choice-screen \
+  --autoplay-policy=user-gesture-required \
+  --deny-permission-prompts \
+  --disable-external-intent-requests \
+  --noerrdialogs \
+  --disable-notifications \
+  --enable-automation \
+  --disable-features=MediaRouter \
+  about:blank &
+
+CHROME_PID=$!
+
+check_tabs_remaining() {
+    local response
+    response=$(curl -s http://localhost:9222/json/list 2>/dev/null)
+    
+    if [[ $? -eq 0 ]] && [[ -n "$response" ]]; then
+        local active_tabs
+        active_tabs=$(echo "$response" | grep -c '"url".*http' || true)
+        echo "$active_tabs"
+    else
+        echo "0"
+    fi
+}
+
+# Wait for Chrome to start
+sleep 10
+
+
+while kill -0 $CHROME_PID 2>/dev/null; do
+    sleep 10
+    
+    TABS_REMAINING=$(check_tabs_remaining)
+    
+    if [[ "$TABS_REMAINING" -eq 0 ]]; then
+        # Wait a bit more to make sure no new tabs are being added
+        sleep 30
+        TABS_REMAINING=$(check_tabs_remaining)
+        if [[ "$TABS_REMAINING" -eq 0 ]]; then
+            break
+        fi
+    fi
+done
+
+cleanup

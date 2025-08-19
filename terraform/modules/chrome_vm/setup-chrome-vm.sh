@@ -21,19 +21,36 @@ sudo tee /etc/systemd/system/chrome-remote.service > /dev/null <<'EOF'
 [Unit]
 Description=Chrome Remote Session
 After=network.target
+
 [Service]
 Type=simple
 User=${SSH_USER}
 Environment=DISPLAY=:99
+Environment=extension_remote_path=${extension_remote_path}
 ExecStart=/opt/chrome-remote.sh
 Restart=always
 RestartSec=5
+
 [Install]
 WantedBy=multi-user.target
 EOF
 
+sudo tee /etc/systemd/system/chrome-periodic.timer > /dev/null <<EOF
+[Unit]
+Description=Run Chrome Session Every ${period}
+Requires=chrome-remote.service
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=${period}
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
 sudo systemctl daemon-reload
-sudo systemctl enable chrome-remote.service
-sudo systemctl start chrome-remote.service
+sudo systemctl enable chrome-periodic.timer
+sudo systemctl start chrome-periodic.timer
 
 sed -i "s|let endpoint = null;|let endpoint = '${upload_function_url}?key=${api_key}';|" ${extension_remote_path}/background.js
