@@ -1,13 +1,12 @@
 locals {
   function_configs = {
-    download = { memory = 256, timeout = 60 }
-    upload   = { memory = 512, timeout = 120 }
-    rss      = { memory = 256, timeout = 30 }
-    cleaner  = { memory = 256, timeout = 300 }
-    tts      = { memory = 512, timeout = 540 }
+    download = { memory = "256Mi", timeout = 60 }
+    upload   = { memory = "512Mi", timeout = 120 }
+    rss      = { memory = "256Mi", timeout = 30 }
+    cleaner  = { memory = "256Mi", timeout = 300 }
+    tts      = { memory = "512Mi", timeout = 540 }
   }
   is_windows = substr(pathexpand("~"), 0, 1) == "/" ? false : true
-
 }
 
 resource "google_storage_bucket" "functions_bucket" {
@@ -34,46 +33,71 @@ resource "google_pubsub_topic" "tts_topic" {
   name = "tts-topic"
 }
 
-resource "google_cloudfunctions_function" "http_functions" {
-  for_each              = toset(var.function_names_http)
-  name                  = each.value
-  runtime               = var.runtime
-  entry_point           = "main"
-  service_account_email = var.functions_sa_email
-  source_archive_bucket = google_storage_bucket.functions_bucket.name
-  source_archive_object = google_storage_bucket_object.function_object[each.value].name
-  trigger_http          = true
-  available_memory_mb   = local.function_configs[each.value].memory
-  timeout               = local.function_configs[each.value].timeout
+resource "google_cloudfunctions2_function" "http_functions" {
+  for_each = toset(var.function_names_http)
+  name     = each.value
+  location = var.region
 
-  environment_variables = {
-    SUPABASE_URL         = var.supabase_url
-    SUPABASE_KEY         = var.supabase_key 
-    GCP_PROJECT          = var.project_id
-    PUBSUB_TOPIC_TTS     = google_pubsub_topic.tts_topic.name
+  build_config {
+    runtime     = var.runtime
+    entry_point = "main"
+    service_account = "projects/${var.project_id}/serviceAccounts/${var.functions_sa_email}"
+    source {
+      storage_source {
+        bucket = google_storage_bucket.functions_bucket.name
+        object = google_storage_bucket_object.function_object[each.value].name
+      }
+    }
+  }
+
+  service_config {
+    max_instance_count    = 1
+    available_memory      = local.function_configs[each.value].memory
+    timeout_seconds       = local.function_configs[each.value].timeout
+    service_account_email = var.functions_sa_email
+    environment_variables = {
+      SUPABASE_URL      = var.supabase_url
+      SUPABASE_KEY      = var.supabase_key
+      GCP_PROJECT       = var.project_id
+      PUBSUB_TOPIC_TTS  = google_pubsub_topic.tts_topic.name
+    }
   }
 
   depends_on = [google_storage_bucket_object.function_object]
 }
 
-resource "google_cloudfunctions_function" "tts_function" {
-  name                  = "tts"
-  runtime               = var.runtime
-  entry_point           = "main"
-  service_account_email = var.functions_sa_email
-  source_archive_bucket = google_storage_bucket.functions_bucket.name
-  source_archive_object = google_storage_bucket_object.function_object["tts"].name
-  available_memory_mb   = local.function_configs["tts"].memory
-  timeout               = local.function_configs["tts"].timeout
+resource "google_cloudfunctions2_function" "tts_function" {
+  name     = "tts"
+  location = var.region
 
-  environment_variables = {
-    SUPABASE_URL = var.supabase_url
-    SUPABASE_KEY = var.supabase_key
+  build_config {
+    runtime     = var.runtime
+    entry_point = "main"
+    service_account = "projects/${var.project_id}/serviceAccounts/${var.functions_sa_email}"
+    source {
+      storage_source {
+        bucket = google_storage_bucket.functions_bucket.name
+        object = google_storage_bucket_object.function_object["tts"].name
+      }
+    }
+  }
+
+  service_config {
+    max_instance_count    = 1
+    available_memory      = local.function_configs["tts"].memory
+    timeout_seconds       = local.function_configs["tts"].timeout
+    service_account_email = var.functions_sa_email
+    environment_variables = {
+      SUPABASE_URL = var.supabase_url
+      SUPABASE_KEY = var.supabase_key
+    }
   }
 
   event_trigger {
-    event_type = "google.pubsub.topic.publish"
-    resource   = google_pubsub_topic.tts_topic.name
+    trigger_region = var.region
+    event_type     = "google.cloud.pubsub.topic.v1.messagePublished"
+    pubsub_topic   = google_pubsub_topic.tts_topic.id
+    retry_policy   = "RETRY_POLICY_RETRY"
   }
 
   depends_on = [google_storage_bucket_object.function_object]
@@ -85,7 +109,7 @@ resource "google_cloud_scheduler_job" "cleaner_job" {
   time_zone = "UTC"
 
   http_target {
-    uri         = google_cloudfunctions_function.http_functions["cleaner"].https_trigger_url
+    uri         = google_cloudfunctions2_function.http_functions["cleaner"].url
     http_method = "GET"
     oidc_token {
       service_account_email = var.scheduler_sa_email
@@ -93,14 +117,13 @@ resource "google_cloud_scheduler_job" "cleaner_job" {
   }
 }
 
-resource "null_resource" "wait_for_scheduler" {
+resource "null_resource" "wait_for_function_creation" {
   depends_on = [
-    google_cloudfunctions_function.http_functions,
-    google_cloudfunctions_function.tts_function
+    google_cloudfunctions2_function.http_functions,
+    google_cloudfunctions2_function.tts_function
   ]
-  
 
   provisioner "local-exec" {
-    command = "local.is_windows ? Remove-Item ${path.module}/tmp -Recurse -Force : rm -rf ${path.module}/tmp/* && rmdir ${path.module}/tmp"
+    command = local.is_windows ? "Remove-Item ${path.module}/tmp -Recurse -Force" : "rm -rf ${path.module}/tmp && rmdir ${path.module}/tmp"
   }
 }

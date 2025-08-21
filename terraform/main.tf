@@ -7,15 +7,10 @@ module "supabase" {
 
 module "postgresql" {
   source = "./modules/postgresql"
-  supabase_rest_url = module.supabase.supabase_rest_url
+  supabase_db_host = "db.${module.supabase.supabase_project_id}.supabase.co"
   supabase_db_password = var.supabase_db_password
-}
-
-module "http" {
-  source = "./modules/http"
-  supabase_rest_url = module.supabase.supabase_rest_url
+  supabase_rest_url = "https://db.${module.supabase.supabase_project_id}.supabase.co/rest/v1/"
   supabase_key        = module.supabase.supabase_key
-  depends_on          = [module.postgresql]
 }
 
 provider "google" {
@@ -32,7 +27,7 @@ module "functions" {
   functions_sa_email = google_service_account.functions_sa.email
   scheduler_sa_email = google_service_account.scheduler_sa.email
   function_names_http = ["download","upload","rss","cleaner"]
-  supabase_url = module.supabase.supabase_url
+  supabase_url = "https://${module.supabase.supabase_project_id}.supabase.co"
   supabase_key = module.supabase.supabase_key
 }
 

@@ -1,4 +1,9 @@
-resource "postgresql_function" "exec_sql" {
+resource "time_sleep" "wait_for_supabase_dns" {
+  create_duration = "60s"
+  depends_on = [var.supabase_db_host]
+}
+
+resource "postgresql_function" "create_rpc" {
   name       = "exec_sql"
   schema     = "public"
   returns    = "json"
@@ -16,4 +21,28 @@ resource "postgresql_function" "exec_sql" {
     name = "query"
     type = "text"
   }
+
+  depends_on = [time_sleep.wait_for_supabase_dns]
+}
+
+resource "null_resource" "execute_sql" {
+  for_each = var.queries
+
+  triggers = {
+    query_file_content = file("${path.module}/sql/${each.value}")
+    supabase_key      = var.supabase_key
+    supabase_rest_url = var.supabase_rest_url
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+    curl -X POST "${self.triggers.supabase_rest_url}/rpc/exec_sql" \
+     -H "Authorization: Bearer ${self.triggers.supabase_key}" \
+     -H "Content-Type: application/json" \
+     -H "apikey: ${self.triggers.supabase_key}" \
+     -d '${jsonencode({query = self.triggers.query_file_content})}'
+EOT
+  }
+
+  depends_on = [ postgresql_function.create_rpc ]
 }
