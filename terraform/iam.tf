@@ -5,7 +5,10 @@ resource "google_project_service" "required_apis" {
     "storage.googleapis.com",
     "pubsub.googleapis.com",
     "cloudfunctions.googleapis.com",
-    "apikeys.googleapis.com"
+    "apikeys.googleapis.com",
+    "cloudbuild.googleapis.com",
+    "run.googleapis.com",
+    "eventarc.googleapis.com"
   ])
   
   project = var.project_id
@@ -27,7 +30,8 @@ resource "google_project_iam_member" "functions_roles" {
   for_each = toset([
     "roles/cloudfunctions.invoker",
     "roles/pubsub.publisher",
-    "roles/storage.objectViewer"
+    "roles/storage.objectViewer",
+    "roles/logging.logWriter"
   ])
   project = var.project_id
   role    = each.value
