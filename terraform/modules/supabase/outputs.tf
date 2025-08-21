@@ -7,8 +7,8 @@ output "supabase_url" {
   value = "https://${resource.supabase_project.personal_podcast.id}.supabase.co"
 }
 
-output "supabase_db_host" {
-  value = "db.${resource.supabase_project.personal_podcast.id}.supabase.co"
+output "supabase_rest_url" {
+  value = "https://${resource.supabase_project.personal_podcast.id}.supabase.co/rest/v1/"
 }
 
 output "supabase_project_id" {

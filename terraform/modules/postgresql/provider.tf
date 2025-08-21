@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "postgresql" {
-  host            = "var.supabase_db_host"
+  host            = "var.supabase_rest_url"
   port            = 5432
   database        = "postgres"
   username        = "postgres"

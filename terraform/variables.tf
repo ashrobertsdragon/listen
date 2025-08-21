@@ -16,12 +16,10 @@ variable "ssh_user" {
 variable "ssh_public_key_file" {
   sensitive = true
   type = string
-  default = "C:/Users/ashro/.ssh/id_rsa.pub"
 }
 variable "ssh_private_key_file" {
   sensitive = true
   type = string
-  default = "C:/Users/ashro/.ssh/id_rsa"
 }
 variable "extension_remote_path" {
   default = "/opt/listen-listener"

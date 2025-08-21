@@ -9,11 +9,10 @@ resource "supabase_project" "personal_podcast" {
   }
 }
 
-resource "null_resource" "wait_for_project" {
+resource "time_sleep" "wait_for_project" {
   depends_on = [supabase_project.personal_podcast]
-  provisioner "local-exec" {
-    command = "sleep 60"
-  }
+
+  create_duration = "60s"
 }
 
 data "supabase_apikeys" "personal_podcast" {

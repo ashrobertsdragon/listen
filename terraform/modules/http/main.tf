@@ -10,7 +10,7 @@ terraform {
 data "http" "execute_sql" {
   for_each          = var.queries
 
-  url               = "https://${var.supabase_project_id}.supabase.co/rest/v1/rpc/exec_sql"
+  url               = "${var.supabase_rest_url}/rpc/exec_sql"
   method            = "POST"
   
   request_headers   = {
@@ -22,6 +22,4 @@ data "http" "execute_sql" {
   request_body      = jsonencode({
     query = file("${path.module}/${each.value}")
   })
-
-  depends_on = [module.postgresql.exec_sql]
 }

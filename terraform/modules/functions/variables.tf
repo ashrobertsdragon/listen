@@ -1,7 +1,7 @@
 variable "project_id" {}
 variable "region" { default = "us-east1" }
 variable "function_names_http" {
-  type = set(string)
+  type = list(string)
   default = ["download","upload","rss","cleaner"]
 }
 variable "runtime" { default = "python310" }

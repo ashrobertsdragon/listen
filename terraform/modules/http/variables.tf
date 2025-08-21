@@ -8,5 +8,5 @@ variable "queries" {
     ]
 }
 
-variable "supabase_project_id" {}
+variable "supabase_rest_url" {}
 variable "supabase_key" {}

@@ -6,6 +6,8 @@ locals {
     cleaner  = { memory = 256, timeout = 300 }
     tts      = { memory = 512, timeout = 540 }
   }
+  is_windows = substr(pathexpand("~"), 0, 1) == "/" ? false : true
+
 }
 
 resource "google_storage_bucket" "functions_bucket" {
@@ -22,7 +24,7 @@ data "archive_file" "function_zip" {
 }
 
 resource "google_storage_bucket_object" "function_object" {
-  for_each = concat(var.function_names_http, ["tts"])
+  for_each = toset(concat(var.function_names_http, ["tts"]))
   name     = "${each.value}-source-${data.archive_file.function_zip[each.value].output_md5}.zip"
   bucket   = google_storage_bucket.functions_bucket.name
   source   = data.archive_file.function_zip[each.value].output_path
@@ -96,8 +98,9 @@ resource "null_resource" "wait_for_scheduler" {
     google_cloudfunctions_function.http_functions,
     google_cloudfunctions_function.tts_function
   ]
+  
 
   provisioner "local-exec" {
-    command = "rm -rf ${path.module}/tmp"
+    command = "local.is_windows ? Remove-Item ${path.module}/tmp -Recurse -Force : rm -rf ${path.module}/tmp/* && rmdir ${path.module}/tmp"
   }
 }

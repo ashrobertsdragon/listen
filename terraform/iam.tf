@@ -17,6 +17,10 @@ resource "google_project_service" "required_apis" {
 resource "google_service_account" "functions_sa" {
   account_id   = "functions-sa"
   display_name = "Service Account for Cloud Functions"
+
+  depends_on = [
+    google_project_service.required_apis
+  ]
 }
 
 resource "google_project_iam_member" "functions_roles" {
@@ -28,17 +32,29 @@ resource "google_project_iam_member" "functions_roles" {
   project = var.project_id
   role    = each.value
   member  = "serviceAccount:${google_service_account.functions_sa.email}"
+
+  depends_on = [
+    google_project_service.required_apis
+  ]
 }
 
 resource "google_service_account" "scheduler_sa" {
   account_id   = "scheduler-sa"
   display_name = "Service Account for Cloud Scheduler"
+
+  depends_on = [
+    google_project_service.required_apis
+  ]
 }
 
 resource "google_project_iam_member" "scheduler_roles" {
   project = var.project_id
   role    = "roles/cloudfunctions.invoker"
   member  = "serviceAccount:${google_service_account.scheduler_sa.email}"
+
+  depends_on = [
+    google_project_service.required_apis
+  ]
 }
 
 output "functions_service_account_email" {

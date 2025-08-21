@@ -7,14 +7,15 @@ module "supabase" {
 
 module "postgresql" {
   source = "./modules/postgresql"
-  supabase_db_host = module.supabase.supabase_db_host
+  supabase_rest_url = module.supabase.supabase_rest_url
   supabase_db_password = var.supabase_db_password
 }
 
 module "http" {
   source = "./modules/http"
-  supabase_project_id = module.supabase.supabase_project_id
-  supabase_key = module.supabase.supabase_key
+  supabase_rest_url = module.supabase.supabase_rest_url
+  supabase_key        = module.supabase.supabase_key
+  depends_on          = [module.postgresql]
 }
 
 provider "google" {
