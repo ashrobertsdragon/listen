@@ -1,3 +1,6 @@
+locals {
+   is_windows = substr(pathexpand("~"), 0, 1) == "/" ? false : true
+}
 module "supabase" {
   source = "./modules/supabase"
   supabase_organization_id = var.supabase_organization_id
@@ -11,6 +14,7 @@ module "postgresql" {
   supabase_db_password = var.supabase_db_password
   supabase_rest_url = "https://db.${module.supabase.supabase_project_id}.supabase.co/rest/v1/"
   supabase_key        = module.supabase.supabase_key
+  windows = local.is_windows
 }
 
 provider "google" {
@@ -29,6 +33,7 @@ module "functions" {
   function_names_http = ["download","upload","rss","cleaner"]
   supabase_url = "https://${module.supabase.supabase_project_id}.supabase.co"
   supabase_key = module.supabase.supabase_key
+  windows = local.is_windows
 }
 
 module "endpoints" {

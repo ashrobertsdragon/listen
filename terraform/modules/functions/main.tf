@@ -6,7 +6,14 @@ locals {
     cleaner  = { memory = "256Mi", timeout = 300 }
     tts      = { memory = "512Mi", timeout = 540 }
   }
-  is_windows = substr(pathexpand("~"), 0, 1) == "/" ? false : true
+
+  function_hashes = {
+    for f in concat(var.function_names_http, ["tts"]) :
+    f => md5(join("", [
+      for p in fileset("${path.root}/../functions/${f}", "**") :
+      filemd5("${path.root}/../functions/${f}/${p}")
+    ]))
+  }
 }
 
 resource "google_storage_bucket" "functions_bucket" {
@@ -15,16 +22,17 @@ resource "google_storage_bucket" "functions_bucket" {
   uniform_bucket_level_access = true
 }
 
-data "archive_file" "function_zip" {
+resource "archive_file" "function_zip" {
   for_each    = toset(concat(var.function_names_http, ["tts"]))
   type        = "zip"
   source_dir  = "${path.root}/../functions/${each.value}"
-  output_path = "${path.module}/tmp/${each.value}.zip"
+  excludes = ["${path.root}/../functions/${each.value}/pyproject.toml"]
+  output_path = "${path.module}/tmp/${each.value}-${local.function_hashes[each.value]}.zip"
 }
 
 resource "google_storage_bucket_object" "function_object" {
   for_each = toset(concat(var.function_names_http, ["tts"]))
-  name     = "${each.value}-source-${data.archive_file.function_zip[each.value].output_md5}.zip"
+  name     = "${each.value}-source-${local.function_hashes[each.value]}.zip"
   bucket   = google_storage_bucket.functions_bucket.name
   source   = data.archive_file.function_zip[each.value].output_path
 }
@@ -63,7 +71,7 @@ resource "google_cloudfunctions2_function" "http_functions" {
     }
   }
 
-  depends_on = [google_storage_bucket_object.function_object]
+  depends_on = [ google_storage_bucket_object.function_object ]
 }
 
 resource "google_cloudfunctions2_function" "tts_function" {
@@ -100,7 +108,7 @@ resource "google_cloudfunctions2_function" "tts_function" {
     retry_policy   = "RETRY_POLICY_RETRY"
   }
 
-  depends_on = [google_storage_bucket_object.function_object]
+  depends_on = [ google_storage_bucket_object.function_object ]
 }
 
 resource "google_cloud_scheduler_job" "cleaner_job" {
@@ -117,13 +125,14 @@ resource "google_cloud_scheduler_job" "cleaner_job" {
   }
 }
 
-resource "null_resource" "wait_for_function_creation" {
-  depends_on = [
-    google_cloudfunctions2_function.http_functions,
-    google_cloudfunctions2_function.tts_function
-  ]
+resource "null_resource" "cleanup_tmp_files" {
+  depends_on = [ google_storage_bucket_object.function_object ]
+
+triggers = {
+  functions_hash = local.function_hashes
+}
 
   provisioner "local-exec" {
-    command = local.is_windows ? "Remove-Item ${path.module}/tmp -Recurse -Force" : "rm -rf ${path.module}/tmp && rmdir ${path.module}/tmp"
+    command = var.windows ? "Remove-Item ${path.module}/tmp -Recurse -Force" : "rm -rf ${path.module}/tmp && rmdir ${path.module}/tmp"
   }
 }
