@@ -8,7 +8,8 @@ resource "google_project_service" "required_apis" {
     "apikeys.googleapis.com",
     "cloudbuild.googleapis.com",
     "run.googleapis.com",
-    "eventarc.googleapis.com"
+    "eventarc.googleapis.com",
+    "artifactregistry.googleapis.com"
   ])
   
   project = var.project_id
