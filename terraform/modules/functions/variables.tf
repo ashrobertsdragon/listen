@@ -8,4 +8,10 @@ variable "runtime" { default = "python310" }
 variable "functions_sa_email" {}
 variable "scheduler_sa_email" {}
 variable "supabase_url" {}
-variable "supabase_key" {}
+variable "supabase_key" {
+  sensitive = true
+}
+variable "windows" {
+  type = bool
+  description = "true for Windows, false for Linux/Mac"
+}

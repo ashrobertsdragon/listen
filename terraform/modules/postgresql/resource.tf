@@ -1,6 +1,12 @@
-resource "time_sleep" "wait_for_supabase_dns" {
-  create_duration = "60s"
-  depends_on = [var.supabase_db_host]
+resource "null_resource" "test_db_connection" {
+  triggers = {
+  supabase_db_host = var.supabase_db_host
+}
+
+  provisioner "local-exec" {
+    interpreter  = var.windows ? ["powershell -File"]  : ["bash"]
+    command   =  "${path.module}/scripts/dns_check${var.windows ? ".ps1" : ".sh"} ${var.supabase_rest_url}"
+  }
 }
 
 resource "postgresql_function" "create_rpc" {
@@ -22,7 +28,7 @@ resource "postgresql_function" "create_rpc" {
     type = "text"
   }
 
-  depends_on = [time_sleep.wait_for_supabase_dns]
+  depends_on = [ null_resource.test_db_connection ]
 }
 
 resource "null_resource" "execute_sql" {

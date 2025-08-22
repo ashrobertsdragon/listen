@@ -18,6 +18,6 @@ provider "postgresql" {
   username             = "postgres"
   password             = var.supabase_db_password
   sslmode              = "require"
-  connect_timeout      = 15
+  connect_timeout      = 60
 }
 
