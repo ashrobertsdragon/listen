@@ -8,13 +8,19 @@ module "supabase" {
   supabase_db_password = var.supabase_db_password
 }
 
+module "dns_check" {
+  source = "./modules/dns_check"
+  supabase_project_id = module.supabase.supabase_project_id
+  supabase_db_password = var.supabase_db_password
+  windows = local.is_windows
+}
+
 module "postgresql" {
   source = "./modules/postgresql"
-  supabase_db_host = "db.${module.supabase.supabase_project_id}.supabase.co"
+  supabase_db_host = module.dns_check.supabase_db_host
   supabase_db_password = var.supabase_db_password
-  supabase_rest_url = "https://db.${module.supabase.supabase_project_id}.supabase.co/rest/v1/"
+  supabase_rest_url = module.supabase.supabase_rest_url
   supabase_key        = module.supabase.supabase_key
-  windows = local.is_windows
 }
 
 provider "google" {
