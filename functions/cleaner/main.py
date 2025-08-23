@@ -70,7 +70,7 @@ def _build_paths(data: list[dict[str, str]]) -> tuple[list[str], list[str]]:
 
 
 @functions_framework.http
-def cleaner(request) -> None:
+def main(request) -> None:
     """Deletes expired files from Supabase storage."""
     days = int(request.args.get("days", 7))
     cutoff_date = datetime.datetime.now() - datetime.timedelta(days=days)

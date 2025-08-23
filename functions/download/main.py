@@ -46,7 +46,7 @@ def _download_audio(uid: str, db: supabase.Client, bucket: str = "listen_tab_pod
 
 
 @functions_framework.http
-def download(request: Request) -> Response:
+def main(request: Request) -> Response:
     """Downloads requested audio file from storage."""
     db = _initialize_supabase()
     guid = request.args.get("guid")

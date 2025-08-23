@@ -123,7 +123,7 @@ def handle_error(error: Exception) -> Response:
 
 
 @functions_framework.http
-def upload(page: Request) -> Response:
+def main(page: Request) -> Response:
     """Parses HTML and sends notification to Cloud Pub/Sub."""
     data: Page = page.get_json(force=True)
     url = data["url"]

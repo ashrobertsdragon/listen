@@ -71,7 +71,7 @@ def _build_rss_feed(data: list[dict[str, str]]) -> str:
     """)
 
 @functions_framework.http
-def rss(_: Request) -> Response:
+def main(_: Request) -> Response:
     """Sends RSS feed to client."""
     supabase_client = _initialize_supabase()
 

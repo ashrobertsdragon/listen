@@ -188,7 +188,7 @@ def _generate_audio(text: str, guid: str, use_cloud_tts: bool) -> str | None:
 
 
 @functions_framework.cloud_event
-def tts(event: CloudEvent) -> None:
+def main(event: CloudEvent) -> None:
     """Generates audio from text using Text-to-Speech API."""
     data = event.get_data()
     if not data:
