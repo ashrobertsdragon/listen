@@ -1,11 +1,12 @@
 resource "null_resource" "test_db_connection" {
   triggers = {
-  supabase_db_host = var.supabase_db_host
-}
+    supabase_db_host = var.supabase_db_host
+  }
 
   provisioner "local-exec" {
-    interpreter  = var.windows ? ["powershell -File"]  : ["bash"]
-    command   =  "${path.module}/scripts/dns_check${var.windows ? ".ps1" : ".sh"} ${var.supabase_rest_url}"
+    interpreter = var.windows ? ["cmd", "/c"] : ["bash"]
+    command     = var.windows ? ".\\scripts\\dns_check.bat ${var.supabase_rest_url}" : "./scripts/dns_check.sh ${var.supabase_rest_url}"
+    working_dir = path.module
   }
 }
 

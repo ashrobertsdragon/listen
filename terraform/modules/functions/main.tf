@@ -34,7 +34,7 @@ resource "google_storage_bucket_object" "function_object" {
   for_each = toset(concat(var.function_names_http, ["tts"]))
   name     = "${each.value}-source-${local.function_hashes[each.value]}.zip"
   bucket   = google_storage_bucket.functions_bucket.name
-  source   = data.archive_file.function_zip[each.value].output_path
+  source   = archive_file.function_zip[each.value].output_path
 }
 
 resource "google_pubsub_topic" "tts_topic" {
@@ -128,11 +128,13 @@ resource "google_cloud_scheduler_job" "cleaner_job" {
 resource "null_resource" "cleanup_tmp_files" {
   depends_on = [ google_storage_bucket_object.function_object ]
 
-triggers = {
-  functions_hash = local.function_hashes
-}
+  triggers = {
+    tmp_exists = anytrue([ for f in fileset("${path.module}/tmp", "**") : fileexists("${path.module}/tmp/${f}") ])
+  }
 
   provisioner "local-exec" {
-    command = var.windows ? "Remove-Item ${path.module}/tmp -Recurse -Force" : "rm -rf ${path.module}/tmp && rmdir ${path.module}/tmp"
+    interpreter = var.windows ? ["cmd", "/c"] : ["bash"]
+    command     = var.windows ? "rmdir /S /Q tmp" : "rm -rf tmp"
+    working_dir = path.module
   }
 }
