@@ -6,4 +6,5 @@ for i in {1..20}; do
   fi
   sleep 30
 done
+echo "Host not ready after 10 minutes"
 exit 1

@@ -5,10 +5,13 @@ resource "postgresql_function" "create_rpc" {
   language   = "plpgsql"
   body = <<SQL
     declare
-      result json;
+      result json := '{}'::json;
     begin
-      execute query into result;
+      execute query;
       return result;
+    exception
+      when others then
+        return json_build_object('error', SQLERRM);
     end;
   SQL
 
@@ -29,11 +32,18 @@ resource "null_resource" "execute_sql" {
 
   provisioner "local-exec" {
     command = <<EOT
-    curl -X POST "${self.triggers.supabase_rest_url}/rpc/exec_sql" \
-     -H "Authorization: Bearer ${self.triggers.supabase_key}" \
-     -H "Content-Type: application/json" \
-     -H "apikey: ${self.triggers.supabase_key}" \
-     -d '${jsonencode({query = self.triggers.query_file_content})}'
+      echo "Executing SQL from ${each.value}..."
+      curl -X POST "${self.triggers.supabase_rest_url}/rpc/exec_sql" \
+        -H "Authorization: Bearer ${self.triggers.supabase_key}" \
+        -H "Content-Type: application/json" \
+        -H "apikey: ${self.triggers.supabase_key}" \
+        -d '${jsonencode({query = self.triggers.query_file_content})}' \
+        --fail-with-body
+      if [ $? -ne 0 ]; then
+        echo "Failed to execute SQL from ${each.value}"
+        exit 1
+      fi
+      echo "Successfully executed SQL from ${each.value}"
 EOT
   }
 

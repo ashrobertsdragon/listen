@@ -72,6 +72,11 @@ resource "google_cloudfunctions2_function" "http_functions" {
   }
 
   depends_on = [ google_storage_bucket_object.function_object ]
+
+  timeouts {
+    create = "15m"
+    update = "10m"
+  }
 }
 
 resource "google_cloudfunctions2_function" "tts_function" {
@@ -109,6 +114,11 @@ resource "google_cloudfunctions2_function" "tts_function" {
   }
 
   depends_on = [ google_storage_bucket_object.function_object ]
+  
+  timeouts {
+    create = "15m"
+    update = "10m"
+  }
 }
 
 resource "google_cloud_scheduler_job" "cleaner_job" {

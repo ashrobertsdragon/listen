@@ -24,7 +24,7 @@ resource "google_compute_instance" "chrome_vm" {
   }
 
   provisioner "file" {
-    source      = "${path.module}chrome-remote.sh"
+    source      = "${path.module}/chrome-remote.sh"
     destination = "/tmp/chrome-remote.sh"
   }
 

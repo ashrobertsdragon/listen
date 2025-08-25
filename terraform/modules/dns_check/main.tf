@@ -8,9 +8,9 @@ variable "supabase_project_id" {
   description = "value of Supabase project ID"
 }
 
-variable "supabase_db_password" {
+variable "supabase_key" {
   type = string
-  description = "value of Supabase database password"
+  description = "Supabase service role key"
   sensitive = true
 }
 
@@ -21,7 +21,7 @@ locals {
 resource "null_resource" "test_db_connection" {
   triggers = {
     supabase_project_id = var.supabase_project_id
-    supabase_db_password = var.supabase_db_password
+    supabase_key = var.supabase_key
   }
 
   provisioner "local-exec" {
@@ -32,7 +32,7 @@ resource "null_resource" "test_db_connection" {
 }
 
 output "supabase_db_host" {
-  value = "https://db.${supabase_project_id}.supabase.co"
+  value = "db.${var.supabase_project_id}.supabase.co"
 }
 
 output "supabase_rest_url" {

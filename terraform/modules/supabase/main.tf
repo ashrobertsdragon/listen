@@ -5,25 +5,22 @@ resource "supabase_project" "personal_podcast" {
   database_password = var.supabase_db_password
 
   lifecycle {
+    prevent_destroy = false
     ignore_changes = [ database_password ]
+    postcondition {
+      condition     = self.id != ""
+      error_message = "Project creation failed - no project ID returned"
+    }
   }
 }
 
-resource "time_sleep" "wait_for_project" {
-  depends_on = [ supabase_project.personal_podcast ]
-
-  create_duration = "60s"
+resource "time_sleep" "wait_30s" {
+  depends_on = [supabase_project.personal_podcast]
+  create_duration = "30s"
 }
+
 
 data "supabase_apikeys" "personal_podcast" {
   project_ref = supabase_project.personal_podcast.id
-  depends_on  = [ time_sleep.wait_for_project ]
-}
-
-resource "null_resource" "echo1" {
-  depends_on = [ data.supabase_apikeys.personal_podcast ]
-  provisioner "local-exec" {
-    command = "echo project id =${supabase_project.personal_podcast.id}"
-    
-  }
+  depends_on  = [ time_sleep.wait_30s ]
 }
