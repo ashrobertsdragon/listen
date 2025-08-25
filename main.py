@@ -11,5 +11,5 @@ if __name__ == "__main__":
 
     func, *args = sys.argv[1:]
     mod = importlib.import_module(name=f"{func}.main")
-    run = getattr(mod, func)
+    run = getattr(mod, "main")
     run(*args)
