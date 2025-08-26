@@ -3,16 +3,21 @@ resource "postgresql_function" "create_rpc" {
   schema     = "public"
   returns    = "json"
   language   = "plpgsql"
+  security_definer = true
   body = <<SQL
-    declare
+    DECLARE
       result json := '{}'::json;
-    begin
-      execute query;
-      return result;
-    exception
-      when others then
-        return json_build_object('error', SQLERRM);
-    end;
+    BEGIN
+      IF current_setting('request.jwt.claims.role', true) <> 'service_role' THEN
+        RAISE EXCEPTION 'Unauthorized';
+      END IF;
+      SET LOCAL search_path TO public;
+      EXECUTE query INTO result;
+      RETURN result;
+    EXCEPTION
+      WHEN others THEN
+        RETURN json_build_object('error', SQLERRM);
+    END;
   SQL
 
   arg {
