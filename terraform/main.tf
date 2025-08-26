@@ -30,17 +30,12 @@ provider "google" {
   zone    = var.zone
 }
 
-module "iam" {
-  source = "./modules/iam"
-  project_id = var.project_id
-}
-
 module "functions" {
   source     = "./modules/functions"
   project_id = var.project_id
   region     = var.region
-  functions_sa_email = module.iam.functions_service_account_email
-  scheduler_sa_email = module.iam.scheduler_service_account_email
+  functions_sa_email = google_service_account.functions_sa.email
+  scheduler_sa_email = google_service_account.scheduler_sa.email
   function_names_http = ["download","upload","rss","cleaner"]
   supabase_url = "https://${module.supabase.supabase_project_id}.supabase.co"
   supabase_key = module.supabase.supabase_key
