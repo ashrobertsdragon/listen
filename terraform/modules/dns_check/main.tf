@@ -15,7 +15,7 @@ variable "supabase_key" {
 }
 
 locals {
-   rest_url = "https://db.${var.supabase_project_id}.supabase.co/rest/v1/"
+   rest_url = "https://${var.supabase_project_id}.supabase.co/rest/v1/"
 }
 
 resource "null_resource" "test_db_connection" {
