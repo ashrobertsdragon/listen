@@ -1,7 +1,3 @@
-variable "project_id" {
-  type = string
-}
-
 locals {
   functions_sa_permissions = [
     "roles/cloudfunctions.developer",
@@ -99,30 +95,73 @@ resource "time_sleep" "wait_for_iam_propagation" {
   create_duration = "30s"
 }
 
+locals {
+  required_roles = join(" ", local.functions_sa_permissions)
+
+  batch_script = <<EOT
+  @echo off
+  setlocal enabledelayedexpansion
+  set "TEMP_ROLES_FILE=%TEMP%\tf_roles_%RANDOM%.txt"
+
+  :loop
+  if exist "%TEMP_ROLES_FILE%" del /q "%TEMP_ROLES_FILE%" 2>nul
+
+  gcloud projects get-iam-policy ${var.project_id} ^
+    --flatten="bindings[].members" ^
+    --format="value(bindings[].role)" ^
+    --filter="bindings.members:serviceAccount:${google_service_account.functions_sa.email}" ^
+    > "%TEMP_ROLES_FILE%" 2>nul
+
+  set missing=0
+  for %%r in (${local.required_roles}) do (
+    findstr /x "%%r" roles.txt >nul
+    if errorlevel 1 (
+      set missing=1
+      goto :checkdone
+    )
+  )
+
+  :checkdone
+  if %missing%==0 (
+    goto :end
+  )
+
+  timeout /t 5 >nul
+  goto :loop
+
+  :end
+  del /q "%TEMP_ROLES_FILE%" 2>nul
+  endlocal
+  exit /b 0
+  EOT
+
+  bash_script = <<EOT
+  number_roles=$${#${local.required_roles}[@]}
+  set_roles=0
+
+  until [[ $set_roles -eq $number_roles ]]; do
+    sleep 5
+    set_roles=0
+    
+    roles=$(gcloud projects get-iam-policy ${var.project_id} \
+      --flatten="bindings[].members" \
+      --format="value(bindings[].role) \
+      --filter="bindings.members:serviceAccount:${google_service_account.functions_sa.email}")
+    
+    for role in "$${{${local.required_roles}[@]}"; do
+      if grep -q "^$${role}$" <<< "$roles"; then
+        set_roles=$((set_roles+1))
+      fi
+    done
+  done
+  EOT
+}
+
 resource "null_resource" "validate_functions_iam" {
   depends_on = [time_sleep.wait_for_iam_propagation]
   
   provisioner "local-exec" {
-    command = <<EOT
-      while true; do
-        roles=<<EOR $(gcloud projects get-iam-policy ${var.project_id}
-        --flatten="bindings[].members"
-        --format="value(bindings[].role)
-        --filter="bindings.members:serviceAccount:${google_service_account.functions_sa.email}")
-        EOR
-        missing=0
-        for role in ${join(" ", local.functions_sa_permissions)}; do
-          if ! echo "$roles" | grep -q "^$role$"; then
-            missing=1
-            break
-          fi
-        done
-        if [ $missing -eq 0 ]; then
-          break
-        fi
-        sleep 5
-      done
-EOT
+    command = local.is_windows ? local.batch_script : local.bash_script
   }
   
   triggers = {
