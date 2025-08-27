@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    google = {
+      source = "hashicorp/google"
+    }
+  }
+}
+
 locals {
    is_windows = substr(pathexpand("~"), 0, 1) == "/" ? false : true
 }
