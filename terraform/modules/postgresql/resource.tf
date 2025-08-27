@@ -6,13 +6,14 @@ resource "postgresql_function" "create_rpc" {
   security_definer = true
   body = <<SQL
     DECLARE
-      result json := '{}'::json;
+      result json;
     BEGIN
       IF current_setting('request.jwt.claims.role', true) <> 'service_role' THEN
         RAISE EXCEPTION 'Unauthorized';
       END IF;
       SET LOCAL search_path TO public;
-      EXECUTE query INTO result;
+      EXECUTE query;
+      result := json_build_object('status', 'success');
       RETURN result;
     EXCEPTION
       WHEN others THEN
