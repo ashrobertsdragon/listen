@@ -6,9 +6,14 @@ terraform {
   }
 }
 
+resource "random_id" "run_id" {
+  byte_length = 4
+}
+
 locals {
    is_windows = substr(pathexpand("~"), 0, 1) == "/" ? false : true
 }
+
 module "supabase" {
   source = "./modules/supabase"
   supabase_organization_id = var.supabase_organization_id
@@ -21,6 +26,8 @@ module "dns_check" {
   supabase_project_id = module.supabase.supabase_project_id
   supabase_key = module.supabase.supabase_key
   windows = local.is_windows
+
+  depends_on = [ module.supabase ]
 }
 
 module "postgresql" {
@@ -29,6 +36,8 @@ module "postgresql" {
   supabase_db_password = var.supabase_db_password
   supabase_rest_url = module.dns_check.supabase_rest_url
   supabase_key        = module.supabase.supabase_key
+
+  depends_on = [ module.dns_check ]
 }
 
 provider "google" {
@@ -48,12 +57,15 @@ module "functions" {
   supabase_url = "https://${module.supabase.supabase_project_id}.supabase.co"
   supabase_key = module.supabase.supabase_key
   windows = local.is_windows
+
+  depends_on = [  null_resource.validate_functions_iam ]
 }
 
 module "endpoints" {
   source = "./modules/endpoints"
   project_id = var.project_id
   region = var.region
+  run_id = random_id.run_id.hex
 }
 
 module "chrome_vm" {

@@ -101,7 +101,7 @@ locals {
   batch_script = <<EOT
   @echo off
   setlocal enabledelayedexpansion
-  set "TEMP_ROLES_FILE=%TEMP%\tf_roles_%RANDOM%.txt"
+  set "TEMP_ROLES_FILE=tf_roles_${random_id.run_id.hex}.txt"
 
   :loop
   if exist "%TEMP_ROLES_FILE%" del /q "%TEMP_ROLES_FILE%" 2>nul
@@ -114,7 +114,7 @@ locals {
 
   set missing=0
   for %%r in (${local.required_roles}) do (
-    findstr /x "%%r" roles.txt >nul
+    findstr /x "%%r" "%TEMP_ROLES_FILE%" >nul
     if errorlevel 1 (
       set missing=1
       goto :checkdone
@@ -136,7 +136,8 @@ locals {
   EOT
 
   bash_script = <<EOT
-  number_roles=$${#${local.required_roles}[@]}
+  required_roles = ${local.required_roles}
+  number_roles=$${#required_roles}[@]}
   set_roles=0
 
   until [[ $set_roles -eq $number_roles ]]; do
@@ -145,10 +146,10 @@ locals {
     
     roles=$(gcloud projects get-iam-policy ${var.project_id} \
       --flatten="bindings[].members" \
-      --format="value(bindings[].role) \
+      --format="value(bindings[].role)" \
       --filter="bindings.members:serviceAccount:${google_service_account.functions_sa.email}")
     
-    for role in "$${{${local.required_roles}[@]}"; do
+    for role in $required_roles; do
       if grep -q "^$${role}$" <<< "$roles"; then
         set_roles=$((set_roles+1))
       fi
@@ -157,17 +158,17 @@ locals {
   EOT
 }
 
-resource "null_resource" "validate_functions_iam" {
-  depends_on = [time_sleep.wait_for_iam_propagation]
-  
+resource "terraform_data" "validate_functions_iam" {
+  depends_on = [ time_sleep.wait_for_iam_propagation ]
+
   provisioner "local-exec" {
     command = local.is_windows ? local.batch_script : local.bash_script
   }
   
-  triggers = {
-    service_account = google_service_account.functions_sa.email
-    expected_roles = jsonencode(local.functions_sa_permissions)
-  }
+  triggers_replace = [
+    google_service_account.functions_sa.email,
+    local.functions_sa_permissions
+  ]
 }
 
 output "functions_service_account_email" {
