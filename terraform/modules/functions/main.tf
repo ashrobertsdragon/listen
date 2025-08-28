@@ -135,12 +135,15 @@ resource "google_cloud_scheduler_job" "cleaner_job" {
   }
 }
 
-resource "null_resource" "cleanup_tmp_files" {
-  depends_on = [ google_storage_bucket_object.function_object ]
+resource "terraform_data" "cleanup_tmp_files" {
+  depends_on = [
+    google_cloudfunctions2_function.http_functions, 
+    google_cloudfunctions2_function.tts_function
+  ]
 
-  triggers = {
-    tmp_exists = anytrue([ for f in fileset("${path.module}/tmp", "**") : fileexists("${path.module}/tmp/${f}") ])
-  }
+  triggers_replace  = [
+    anytrue([ for f in fileset("${path.module}/tmp", "**") : fileexists("${path.module}/tmp/${f}") ])
+  ]
 
   provisioner "local-exec" {
     interpreter = var.windows ? ["cmd", "/c"] : ["bash"]

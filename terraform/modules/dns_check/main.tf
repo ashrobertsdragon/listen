@@ -15,26 +15,26 @@ variable "supabase_key" {
 }
 
 locals {
-   rest_url = "https://${var.supabase_project_id}.supabase.co/rest/v1/"
+   host = "${var.supabase_project_id}.supabase.co" 
 }
 
-resource "null_resource" "test_db_connection" {
-  triggers = {
-    supabase_project_id = var.supabase_project_id
-    supabase_key = var.supabase_key
-  }
+resource "terraform_data" "test_db_connection" {
+  triggers_replace = [
+    var.supabase_project_id,
+    var.supabase_key
+  ]
 
   provisioner "local-exec" {
     interpreter = var.windows ? ["cmd", "/c"] : ["bash"]
-    command     = "dns_check.${var.windows ? "bat" : "sh"} ${local.rest_url}"
+    command     = "${path.module}/scripts/dns_check.${var.windows ? "bat" : "sh"} ${local.host}"
     working_dir = "${path.module}/scripts"
   }
 }
 
 output "supabase_db_host" {
-  value = "db.${var.supabase_project_id}.supabase.co"
+  value = "db.${local.host}"
 }
 
 output "supabase_rest_url" {
-  value = local.rest_url
+  value ="https://${local.host}/rest/v1/"
 }
