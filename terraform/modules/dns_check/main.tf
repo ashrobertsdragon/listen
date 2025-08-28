@@ -26,9 +26,13 @@ resource "terraform_data" "test_db_connection" {
 
   provisioner "local-exec" {
     interpreter = var.windows ? ["cmd", "/c"] : ["bash"]
-    command     = "${path.module}/scripts/dns_check.${var.windows ? "bat" : "sh"} ${local.host}"
+    command     = "dns_check.${var.windows ? "bat" : "sh"} ${local.host}"
     working_dir = "${path.module}/scripts"
   }
+}
+
+output "host_ready" {
+  value = terraform_data.test_db_connection.id
 }
 
 output "supabase_db_host" {
