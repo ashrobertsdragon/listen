@@ -1,8 +1,8 @@
 @echo off
-set supabase_rest_api_host=%1
+set supabase_host_name=%1
 
 for /L %%i in (1,1,20) do (
-    nslookup $supabase_rest_api_host >nul 2>&1
+    nslookup %supabase_host_name% >nul 2>&1
     if %ERRORLEVEL%==0 (
         exit /b 0
     )
