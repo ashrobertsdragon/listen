@@ -1,3 +1,7 @@
+resource "terraform_data" "wait_for_dns_propagation" {
+  triggers_replace = [ var.host_ready ]
+}
+
 resource "postgresql_function" "create_rpc" {
   name       = "exec_sql"
   schema     = "public"
@@ -25,6 +29,8 @@ resource "postgresql_function" "create_rpc" {
     name = "query"
     type = "text"
   }
+
+  depends_on = [ terraform_data.wait_for_dns_propagation ]
 }
 
 resource "terraform_data" "execute_sql" {

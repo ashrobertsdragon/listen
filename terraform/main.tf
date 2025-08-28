@@ -32,12 +32,11 @@ module "dns_check" {
 
 module "postgresql" {
   source = "./modules/postgresql"
-  supabase_db_host = module.dns_check.supabase_db_host
-  supabase_db_password = var.supabase_db_password
-  supabase_rest_url = module.dns_check.supabase_rest_url
-  supabase_key        = module.supabase.supabase_key
-
-  depends_on = [ module.dns_check ]
+  supabase_db_host           = module.dns_check.supabase_db_host
+  supabase_db_password   = var.supabase_db_password
+  supabase_rest_url            = module.dns_check.supabase_rest_url
+  supabase_key                  = module.supabase.supabase_key
+  host_ready                       = module.dns_check.host_ready
 }
 
 provider "google" {
@@ -58,7 +57,7 @@ module "functions" {
   supabase_key = module.supabase.supabase_key
   windows = local.is_windows
 
-  depends_on = [  null_resource.validate_functions_iam ]
+  depends_on = [  terraform_data.validate_functions_iam ]
 }
 
 module "endpoints" {

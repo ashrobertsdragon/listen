@@ -13,3 +13,4 @@ variable "queries" {
         "index.sql"
     ]
 }
+variable "host_ready" {}
