@@ -57,7 +57,10 @@ module "functions" {
   supabase_key = module.supabase.supabase_key
   windows = local.is_windows
 
-  depends_on = [  terraform_data.validate_functions_iam ]
+  depends_on = [
+    terraform_data.validate_functions_iam,
+    module.supabase
+  ]
 }
 
 module "endpoints" {
@@ -78,4 +81,9 @@ module "chrome_vm" {
   api_key = module.endpoints.api_key
   extension_remote_path = var.extension_remote_path
   period = var.vm_period
+
+  depends_on = [
+    module.functions,
+    module.endpoints
+  ]
 }

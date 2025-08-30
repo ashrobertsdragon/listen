@@ -1,4 +1,6 @@
 resource "terraform_data" "wait_for_dns_propagation" {
+  input = [ var.host_ready ]
+
   triggers_replace = [ var.host_ready ]
 }
 
@@ -31,6 +33,14 @@ resource "postgresql_function" "create_rpc" {
   }
 
   depends_on = [ terraform_data.wait_for_dns_propagation ]
+
+  lifecycle {
+    replace_triggered_by = [ terraform_data.wait_for_dns_propagation ]
+    postcondition {
+      condition     = self.oid > 0
+      error_message = "Function creation failed"
+    }
+  }
 }
 
 resource "terraform_data" "execute_sql" {
@@ -64,4 +74,7 @@ resource "terraform_data" "execute_sql" {
   }
 
   depends_on = [ postgresql_function.create_rpc ]
+  lifecycle {
+    replace_triggered_by = [ postgresql_function.create_rpc ]
+  }
 }

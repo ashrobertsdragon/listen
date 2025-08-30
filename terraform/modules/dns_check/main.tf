@@ -31,8 +31,16 @@ resource "terraform_data" "test_db_connection" {
   }
 }
 
+resource "terraform_data" "wait_for_dns_propagation" {
+  depends_on = [ terraform_data.test_db_connection ]
+  input = {
+    host_ready = terraform_data.test_db_connection.id}
+
+  triggers_replace = [ terraform_data.test_db_connection.id ]
+}
+
 output "host_ready" {
-  value = terraform_data.test_db_connection.id
+  value = terraform_data.wait_for_dns_propagation.output.host_ready
 }
 
 output "supabase_db_host" {

@@ -14,12 +14,19 @@ resource "supabase_project" "personal_podcast" {
   }
 }
 
-resource "time_sleep" "wait_30s" {
+ephemeral "time_sleep" "wait_30s" {
   depends_on = [supabase_project.personal_podcast]
   create_duration = "30s"
 }
 
+resource "terraform_data" "block_on_project_creation" {
+  depends_on = [ supabase_project.personal_podcast ]
 
+  triggers_replace = [ supabase_project.personal_podcast.id ]
+  input = {
+    project_id = supabase_project.personal_podcast.id
+  }
+}
 data "supabase_apikeys" "personal_podcast" {
   project_ref = supabase_project.personal_podcast.id
   depends_on  = [ time_sleep.wait_30s ]
