@@ -4,5 +4,5 @@ output "supabase_key" {
 }
 
 output "supabase_project_id" {
-  value = terraform_data.block_on_project_creation.output.id # "project_id" passthru
+  value = terraform_data.block_on_project_creation.output # "project_id" passthru
 }

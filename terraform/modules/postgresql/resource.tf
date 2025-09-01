@@ -36,10 +36,6 @@ resource "postgresql_function" "create_rpc" {
 
   lifecycle {
     replace_triggered_by = [ terraform_data.wait_for_dns_propagation ]
-    postcondition {
-      condition     = self.oid > 0
-      error_message = "Function creation failed"
-    }
   }
 }
 

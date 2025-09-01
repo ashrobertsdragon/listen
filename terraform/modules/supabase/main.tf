@@ -14,7 +14,7 @@ resource "supabase_project" "personal_podcast" {
   }
 }
 
-ephemeral "time_sleep" "wait_30s" {
+resource "time_sleep" "wait_30s" {
   depends_on = [supabase_project.personal_podcast]
   create_duration = "30s"
 }
