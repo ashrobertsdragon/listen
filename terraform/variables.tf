@@ -26,15 +26,15 @@ variable "extension_remote_path" {
   type = string
 }
 variable "supabase_db_password" {
-  sensitive = true
+#sensitive = true
   type = string
 }
 variable "supabase_organization_id" {
-  sensitive = true
+  #sensitive = true
   type = string
 }
 variable "supabase_access_token" {
-  sensitive = true
+  #sensitive = true
   type = string
 }
 variable "vm_period" {

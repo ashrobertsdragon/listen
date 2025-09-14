@@ -8,7 +8,9 @@ locals {
     "roles/artifactregistry.reader",
     "roles/artifactregistry.writer",
     "roles/run.admin",
-    "roles/iam.serviceAccountUser"
+    "roles/iam.serviceAccountUser",
+    "roles/cloudbuild.builds.editor",
+    "roles/storage.objectAdmin"
   ]
 }
 
