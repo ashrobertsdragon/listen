@@ -23,3 +23,16 @@ members = [
     "functions/tts",
     "functions/upload",
 ]
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/{tests,docs,tools,terraform}/*" = ["F401", "I001"]
+
+[tool.ruff.format]
+docstring-code-format = true
+line-ending = "lf"
