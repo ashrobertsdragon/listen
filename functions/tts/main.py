@@ -41,21 +41,21 @@ def _get_character_count(
     try:
         response = (
             db.table(table)
-            .select("count")
+            .select("character_count")
             .match({
                 "month": current_month,
                 "year": current_year,
             })
             .execute()
         )
-        return response.data[0]["count"] if response and response.count else 0
+        return response.data[0]["character_count"] if response and response.count else 0
     except supabase.SupabaseException as e:
         logging.error(f"Failed to insert data into Supabase: {e}")
         return None
 
 
 def _update_character_count(
-    count: int,
+    character_count: int,
     current_month: str,
     current_year: str,
     db: supabase.Client,
@@ -63,7 +63,7 @@ def _update_character_count(
 ) -> bool:
     try:
         db.table(table).upsert({
-            "count": count,
+            "character_count": character_count,
             "month": current_month,
             "year": current_year,
         }).execute()
@@ -83,18 +83,18 @@ def _add_character_count(
 
     current_month, current_year = _get_current_period()
 
-    count = _get_character_count(
+    character_count = _get_character_count(
         current_month, current_year, db, table
     )
-    if count is None:
+    if character_count is None:
         return False
 
-    count += text_length
+    character_count += text_length
 
     updated = _update_character_count(
-        count, current_month, current_year, db, table
+        character_count, current_month, current_year, db, table
     )
-    return count < max_count if updated else False
+    return character_count < max_count if updated else False
 
 
 def _update_db(
@@ -183,7 +183,7 @@ def _generate_audio(text: str, guid: str, use_cloud_tts: bool) -> str | None:
         logging.info("Using Google Cloud TTS")
         return _generate_cloud_tts_audio(text, guid)
     else:
-        logging.info("Character count limit reached. Using gTTS")
+        logging.info("Character character_count limit reached. Using gTTS")
         return _generate_gtts_audio(text, guid)
 
 
