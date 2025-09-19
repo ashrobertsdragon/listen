@@ -53,4 +53,9 @@ sudo systemctl daemon-reload
 sudo systemctl enable chrome-periodic.timer
 sudo systemctl start chrome-periodic.timer
 
-sed -i "s|let endpoint = null;|let endpoint = '${upload_function_url}?key=${api_key}';|" ${extension_remote_path}/background.js
+cat > ${extension_remote_path}/config.json << EOF
+{
+  "endpoint": "${upload_function_url}?key=${api_key}",
+  "tabGroupName": "listen"
+}
+EOF

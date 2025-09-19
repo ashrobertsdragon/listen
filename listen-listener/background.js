@@ -3,14 +3,39 @@ let tabGroupName = "listen";
 
 const NEW_TAB = "chrome://newtab/";
 
-chrome.storage.sync.get(["endpoint", "tabGroupName"], (result) => {
-  if (result.endpoint) {
-    endpoint = result.endpoint;
+async function loadConfiguration() {
+  try {
+    const response = await fetch(chrome.runtime.getURL('config.json'));
+    const config = await response.json();
+    const stored = await chrome.storage.sync.get(["endpoint", "tabGroupName"]);
+
+    if (!stored.endpoint && config.endpoint) {
+      await chrome.storage.sync.set({ endpoint: config.endpoint });
+      endpoint = config.endpoint;
+    } else if (stored.endpoint) {
+      endpoint = stored.endpoint;
+    }
+
+    if (!stored.tabGroupName && config.tabGroupName) {
+      await chrome.storage.sync.set({ tabGroupName: config.tabGroupName });
+      tabGroupName = config.tabGroupName;
+    } else if (stored.tabGroupName) {
+      tabGroupName = stored.tabGroupName;
+    }
+  } catch (error) {
+    console.log("No config.json found, using storage values only");
+    const result = await chrome.storage.sync.get(["endpoint", "tabGroupName"]);
+    if (result.endpoint) {
+      endpoint = result.endpoint;
+    }
+    if (result.tabGroupName) {
+      tabGroupName = result.tabGroupName;
+    }
   }
-  if (result.tabGroupName) {
-    tabGroupName = result.tabGroupName;
-  }
-});
+}
+
+// Load configuration on startup
+loadConfiguration();
 
 chrome.storage.onChanged.addListener((changes) => {
   if (changes.endpoint) {
@@ -72,7 +97,7 @@ async function processGroup(groupId) {
 
 async function getPage(tab) {
   await new Promise(resolve => setTimeout(resolve, 1000));
-  
+
   const results = await chrome.scripting.executeScript({
     target: { tab },
     func: () => {
@@ -82,7 +107,7 @@ async function getPage(tab) {
       };
     }
   });
-  
+
   return results[0].result;
 }
 

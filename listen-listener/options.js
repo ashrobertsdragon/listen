@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   chrome.storage.sync.get(["endpoint", "tabGroupName"], (result) => {
     if (result.endpoint) {
-      endpointInput.value = result.endpointName;
+      endpointInput.value = result.endpoint;
     }
     if (result.tabGroupName) {
       tabGroupNameInput.value = result.tabGroupName;
