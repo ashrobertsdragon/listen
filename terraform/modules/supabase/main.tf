@@ -14,9 +14,29 @@ resource "time_sleep" "wait_30s" {
   create_duration = "30s"
 }
 
+data "supabase_apikeys" "personal_podcast" {
+  project_ref = supabase_project.personal_podcast.id
+
+  depends_on = [
+    supabase_project.personal_podcast,
+    time_sleep.wait_30s
+  ]
+}
+
+resource "terraform_data" "block_on_project_creation" {
+  depends_on = [
+    supabase_project.personal_podcast,
+    time_sleep.wait_30s
+  ]
+
+  triggers_replace = [supabase_project.personal_podcast.id]
+  input = {
+    project_id = supabase_project.personal_podcast.id
+  }
+}
 
 locals {
-  bucket_name = "listen_podcast_${md5(personal_podcast.name)}"
+  bucket_name = "listen_podcast_${md5(supabase_project.personal_podcast.name)}"
 
   bucket_sql = <<-EOF
     INSERT INTO
@@ -40,7 +60,7 @@ locals {
     EOF
 
   static_sql = {
-    for q in fileset("${path.module}/sql/**.sql") : q => file("${path.module}/sql/${q}")
+    for q in fileset("${path.module}/sql", "*.sql") : q => file("${path.module}/sql/${q}")
   }
   all_queries = merge(local.static_sql, { "bucket_sql" = local.bucket_sql })
 }
