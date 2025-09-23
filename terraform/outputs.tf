@@ -3,6 +3,6 @@ output "upload_function_url" {
 }
 
 output "supabase_bucket" {
-  value = module.postgresql.supabase_bucket_name
+  value = module.supabase.bucket_name
 }
 
