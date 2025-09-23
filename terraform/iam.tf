@@ -40,24 +40,24 @@ resource "google_service_account" "functions_sa" {
   account_id   = "functions-sa"
   display_name = "Service Account for Cloud Functions"
 
-  depends_on   = [ google_project_service.required_apis ]
+  depends_on = [google_project_service.required_apis]
 }
 
 resource "google_service_account" "scheduler_sa" {
   account_id   = "scheduler-sa"
   display_name = "Service Account for Cloud Scheduler"
 
-  depends_on   = [ google_project_service.required_apis ]
+  depends_on = [google_project_service.required_apis]
 }
 
 resource "google_service_account" "api_gateway_sa" {
   account_id   = "api-gateway-sa"
   display_name = "Service Account for API Gateway"
 
-  depends_on   = [ google_project_service.required_apis ]
+  depends_on = [google_project_service.required_apis]
 }
 
-resource "google_project_iam_member"  "functions_roles" {
+resource "google_project_iam_member" "functions_roles" {
   for_each = toset(local.functions_sa_permissions)
 
   project = var.project_id
@@ -93,48 +93,36 @@ resource "time_sleep" "wait_for_iam_propagation" {
     google_project_iam_member.functions_roles,
     google_service_account.functions_sa
   ]
-  
+
   create_duration = "30s"
+}
+
+data "google_service_account_iam_policy" "functions_sa_policy" {
+  service_account_id = google_service_account.functions_sa.name
+
+  depends_on = [time_sleep.wait_for_iam_propagation]
 }
 
 locals {
   required_roles = join(" ", local.functions_sa_permissions)
 
   batch_script = <<EOT
-  @echo off
+    @echo off
   setlocal enabledelayedexpansion
-  set "TEMP_ROLES_FILE=tf_roles_${random_id.run_id.hex}.txt"
 
   :loop
-  if exist "%TEMP_ROLES_FILE%" del /q "%TEMP_ROLES_FILE%" 2>nul
+  for /f "delims=" %%a in (
+    'gcloud projects get-iam-policy ${var.project_id} ^
+    --format^="value(bindings[].role)" ^
+    --filter^="bindings.members:serviceAccount:${google_service_account.functions_sa.email}"'
+  ) do set "roles=%%a"
 
-  gcloud projects get-iam-policy ${var.project_id} ^
-    --flatten="bindings[].members" ^
-    --format="value(bindings[].role)" ^
-    --filter="bindings.members:serviceAccount:${google_service_account.functions_sa.email}" ^
-    > "%TEMP_ROLES_FILE%" 2>nul
-
-  set missing=0
   for %%r in (${local.required_roles}) do (
-    findstr /x "%%r" "%TEMP_ROLES_FILE%" >nul
-    if errorlevel 1 (
-      set missing=1
-      goto :checkdone
+    echo !roles! | findstr /c:"%%r" >nul || (
+      timeout /t 5 >nul
+      goto loop
     )
   )
-
-  :checkdone
-  if %missing%==0 (
-    goto :end
-  )
-
-  timeout /t 5 >nul
-  goto :loop
-
-  :end
-  del /q "%TEMP_ROLES_FILE%" 2>nul
-  endlocal
-  exit /b 0
   EOT
 
   bash_script = <<EOT
@@ -161,16 +149,26 @@ locals {
 }
 
 resource "terraform_data" "validate_functions_iam" {
-  depends_on = [ time_sleep.wait_for_iam_propagation ]
+  depends_on = [time_sleep.wait_for_iam_propagation]
 
   provisioner "local-exec" {
     command = local.is_windows ? local.batch_script : local.bash_script
   }
-  
+
   triggers_replace = [
     google_service_account.functions_sa.email,
     local.functions_sa_permissions
   ]
+}
+
+resource "terraform_data" "functions_iam_ready" {
+  depends_on = [terraform_data.validate_functions_iam]
+
+  triggers_replace = [
+    google_service_account.functions_sa.email,
+    local.functions_sa_permissions
+  ]
+  input = { "ready" = terraform_data.validate_functions_iam.id }
 }
 
 output "functions_service_account_email" {
