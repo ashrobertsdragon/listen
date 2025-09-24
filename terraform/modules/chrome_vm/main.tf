@@ -42,11 +42,35 @@ resource "google_compute_instance" "chrome_vm" {
   tags = ["chrome-vm"]
 }
 
-resource "local_file" "reconnect_script" {
+resource "local_file" "reconnect_script_bash" {
   content = templatefile("${path.module}/reconnect.sh.tpl", {
     SSH_USER = var.ssh_user
     VM_IP    = google_compute_instance.chrome_vm.network_interface[0].access_config[0].nat_ip
+    SSH_PRIVATE_KEY_FILE = var.ssh_private_key_file
   })
   filename = "${path.root}/reconnect.sh"
   file_permission = "0755"
+}
+
+resource "local_file" "reconnect_script_powershell" {
+  content = templatefile("${path.module}/reconnect.ps1.tpl", {
+    SSH_USER = var.ssh_user
+    VM_IP    = google_compute_instance.chrome_vm.network_interface[0].access_config[0].nat_ip
+    SSH_PRIVATE_KEY_FILE = var.ssh_private_key_file
+  })
+  filename = "${path.root}/reconnect.ps1"
+  file_permission = "0755"
+}
+
+resource "terraform_data" "cleanup_host_key" {
+  input = {
+    vm_ip = google_compute_instance.chrome_vm.network_interface[0].access_config[0].nat_ip
+    windows = var.windows
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = self.input.windows ? "ssh-keygen -f \"%USERPROFILE%\\.ssh\\known_hosts\" -R \"${self.input.vm_ip}\" 2>nul || echo done" : "ssh-keygen -f ~/.ssh/known_hosts -R '${self.input.vm_ip}' 2>/dev/null || true"
+    interpreter = self.input.windows ? ["cmd", "/c"] : ["bash", "-c"]
+  }
 }

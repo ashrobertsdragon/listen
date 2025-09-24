@@ -66,6 +66,7 @@ module "chrome_vm" {
   api_key               = module.endpoints.api_key
   extension_remote_path = var.extension_remote_path
   period                = var.vm_period
+  windows               = local.is_windows
 
   depends_on = [
     module.functions,

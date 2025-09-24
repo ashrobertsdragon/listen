@@ -1,17 +1,17 @@
 #!/bin/bash
 sudo apt-get update -y
-sudo apt-get install -y jq wget unzip xvfb libnss3 libxss1 \
+sudo apt-get install -y git jq wget unzip xvfb libnss3 libxss1 \
   libappindicator3-1 libindicator7 fonts-liberation libasound2 \
   libatk-bridge2.0-0 libatk1.0-0 libcups2 libgbm1 libgtk-3-0 \
   libnspr4 novnc websockify x11vnc
 wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-apt install -y ./google-chrome-stable_current_amd64.deb
+sudo apt install -y ./google-chrome-stable_current_amd64.deb
 
 sudo mkdir -p /opt/chrome-profile && sudo chown ${SSH_USER}:${SSH_USER} /opt/chrome-profile
 
 sudo mkdir -p ${extension_remote_path} && sudo chown ${SSH_USER}:${SSH_USER} ${extension_remote_path}
 git clone https://github.com/ashrobertsdragon/listen.git
-cp listen/listen-listener ${extension_remote_path}
+sudo cp -r listen/listen-listener/* ${extension_remote_path}/
 sudo rm -rf listen
 
 sudo cp /tmp/chrome-remote.sh /opt/chrome-remote.sh
@@ -41,7 +41,7 @@ Description=Run Chrome Session Every ${period}
 Requires=chrome-remote.service
 
 [Timer]
-OnBootSec=10min
+OnBootSec=5min
 OnUnitActiveSec=${period}
 Persistent=true
 
@@ -52,6 +52,7 @@ EOF
 sudo systemctl daemon-reload
 sudo systemctl enable chrome-periodic.timer
 sudo systemctl start chrome-periodic.timer
+echo "Startup script completed at $(date)" >> /var/log/startup.log
 
 cat > ${extension_remote_path}/config.json << EOF
 {

@@ -11,3 +11,7 @@ variable "extension_remote_path" {
   description = "Full path on VM to listen-listener extension folder (background.js will be patched there)."
 }
 variable "period" {}
+variable "windows" {
+  type = bool
+  description = "Whether running on Windows"
+}
