@@ -197,8 +197,11 @@ pyrightconfig.json
 .python-version
 
 # terraform
-.tfvars
+*.tfvars
 .terraform/
 *.tfstate*
 terraform/**/*.zip
 terraform-key.json
+
+reconnect.sh
+reconnect.ps1
