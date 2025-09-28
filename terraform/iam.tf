@@ -103,16 +103,13 @@ data "google_service_account_iam_policy" "functions_sa_policy" {
   depends_on = [time_sleep.wait_for_iam_propagation]
 }
 
-locals {
-  required_roles = join(" ", local.functions_sa_permissions)
-
-}
 
 resource "terraform_data" "validate_functions_iam" {
   depends_on = [time_sleep.wait_for_iam_propagation]
+  input      = { required_roles = join(" ", local.functions_sa_permissions) }
 
   provisioner "local-exec" {
-    command = "${local.is_windows ? "python" : "python3"} ${path.module}/check_gcloud.py ${var.project_id} ${google_service_account.functions_sa.email} ${local.required_roles}"
+    command = "${local.is_windows ? "python" : "python3"} ${path.module}/check_gcloud.py ${var.project_id} ${google_service_account.functions_sa.email} ${self.input.required_roles}"
   }
 
   triggers_replace = [
