@@ -106,53 +106,13 @@ data "google_service_account_iam_policy" "functions_sa_policy" {
 locals {
   required_roles = join(" ", local.functions_sa_permissions)
 
-  batch_script = <<EOT
-    @echo off
-  setlocal enabledelayedexpansion
-
-  :loop
-  for /f "delims=" %%a in (
-    'gcloud projects get-iam-policy ${var.project_id} ^
-    --format^="value(bindings[].role)" ^
-    --filter^="bindings.members:serviceAccount:${google_service_account.functions_sa.email}"'
-  ) do set "roles=%%a"
-
-  for %%r in (${local.required_roles}) do (
-    echo !roles! | findstr /c:"%%r" >nul || (
-      timeout /t 5 >nul
-      goto loop
-    )
-  )
-  EOT
-
-  bash_script = <<EOT
-  required_roles = ${local.required_roles}
-  number_roles=$${#required_roles}[@]}
-  set_roles=0
-
-  until [[ $set_roles -eq $number_roles ]]; do
-    sleep 5
-    set_roles=0
-    
-    roles=$(gcloud projects get-iam-policy ${var.project_id} \
-      --flatten="bindings[].members" \
-      --format="value(bindings[].role)" \
-      --filter="bindings.members:serviceAccount:${google_service_account.functions_sa.email}")
-    
-    for role in $required_roles; do
-      if grep -q "^$${role}$" <<< "$roles"; then
-        set_roles=$((set_roles+1))
-      fi
-    done
-  done
-  EOT
 }
 
 resource "terraform_data" "validate_functions_iam" {
   depends_on = [time_sleep.wait_for_iam_propagation]
 
   provisioner "local-exec" {
-    command = local.is_windows ? local.batch_script : local.bash_script
+    command = "${local.is_windows ? "python" : "python3"} ${path.module}/check_gcloud.py ${var.project_id} ${google_service_account.functions_sa.email} ${local.required_roles}"
   }
 
   triggers_replace = [
