@@ -12,19 +12,19 @@ def check_gcloud(project_id: str, service_account: str, roles: list[str]) -> boo
         f'--filter=bindings.members:serviceAccount:{service_account}',
     ]
 
-    result = subprocess.run(command, capture_output=True, text=True, shell=True)
+    result = subprocess.run(command, capture_output=True, text=True, shell=True, check=True)
 
-    if result.returncode != 0:
-        print(f"Error running gcloud command: {result.stderr}")
-        return False
-
-    return set(result.stdout.strip().splitlines()) == set(roles)
+    return set(roles).issubset(set(result.stdout.strip().split(";")))
 
 def loop_check_gcloud(project_id: str, service_account: str, roles: list[str], max_checks: int = 10, pause: int = 5) -> None:
     for i in range(max_checks):
-        if check_gcloud(project_id, service_account, roles):
-            print("All roles found")
-            sys.exit(0)
+        try:
+            if check_gcloud(project_id, service_account, roles):
+                print("All roles found")
+                sys.exit(0)
+        except subprocess.CalledProcessError as e:
+            print(f"Error checking roles: {e}")
+            sys.exit(1)
         print(f"Not all roles found. {max_checks -i } checks remaining")
         time.sleep(pause)
 
@@ -32,5 +32,5 @@ def loop_check_gcloud(project_id: str, service_account: str, roles: list[str], m
     sys.exit(1)
 
 if __name__ == "__main__":
-    project_id, service_account, *roles = sys.argv
+    _, project_id, service_account, *roles = sys.argv
     loop_check_gcloud(project_id, service_account, roles)
