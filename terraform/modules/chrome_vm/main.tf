@@ -28,6 +28,23 @@ resource "google_compute_instance" "chrome_vm" {
     destination = "/tmp/chrome-remote.sh"
   }
 
+  provisioner "file" {
+    source      = "${path.root}/../listen-listener"
+    destination = "/tmp/listen-listener"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo cp /tmp/chrome-remote.sh /opt/chrome-remote.sh",
+      "sudo chmod +x /opt/chrome-remote.sh",
+      "sudo mkdir -p ${var.extension_remote_path}",
+      "sudo cp -r /tmp/listen-listener/* ${var.extension_remote_path}/ 2>/dev/null || echo 'Using git clone fallback'",
+      "if [ ! -f ${var.extension_remote_path}/manifest.json ]; then git clone https://github.com/ashrobertsdragon/listen.git /tmp/repo && sudo cp -r /tmp/repo/listen-listener/* ${var.extension_remote_path}/ && rm -rf /tmp/repo; fi",
+      "sudo chown -R ${var.ssh_user}:${var.ssh_user} ${var.extension_remote_path}",
+      "ls -la ${var.extension_remote_path}/"
+    ]
+  }
+
   metadata = {
     ssh-keys = "${var.ssh_user}:${file(var.ssh_public_key_file)}"
     startup-script = templatefile("${path.module}/setup-chrome-vm.sh", {

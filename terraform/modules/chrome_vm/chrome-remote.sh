@@ -40,7 +40,6 @@ google-chrome \
   --disable-features=Translate \
   --no-default-browser-check \
   --disable-background-timer-throttling \
-  --no-first-run \
   --disable-default-apps \
   --ash-no-nudges \
   --disable-search-engine-choice-screen \
@@ -49,9 +48,8 @@ google-chrome \
   --disable-external-intent-requests \
   --noerrdialogs \
   --disable-notifications \
-  --enable-automation \
   --disable-features=MediaRouter \
-  about:blank &
+  https://accounts.google.com &
 
 CHROME_PID=$!
 

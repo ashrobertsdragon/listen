@@ -1,21 +1,21 @@
 #!/bin/bash
-sudo apt-get update -y
-sudo apt-get install -y git jq wget unzip xvfb libnss3 libxss1 \
-  libappindicator3-1 libindicator7 fonts-liberation libasound2 \
-  libatk-bridge2.0-0 libatk1.0-0 libcups2 libgbm1 libgtk-3-0 \
-  libnspr4 novnc websockify x11vnc
-wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-sudo apt install -y ./google-chrome-stable_current_amd64.deb
+set -e
+export DEBIAN_FRONTEND=noninteractive
+export APT_LISTCHANGES_FRONTEND=none
 
-sudo mkdir -p /opt/chrome-profile && sudo chown ${SSH_USER}:${SSH_USER} /opt/chrome-profile
+sudo -E apt-get update -y
+sudo -E apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
+  git jq wget unzip xvfb novnc websockify x11vnc
 
-sudo mkdir -p ${extension_remote_path} && sudo chown ${SSH_USER}:${SSH_USER} ${extension_remote_path}
-git clone https://github.com/ashrobertsdragon/listen.git
-sudo cp -r listen/listen-listener/* ${extension_remote_path}/
-sudo rm -rf listen
+wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo -E apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
+  libnss3 libxss1 libappindicator3-1 libindicator7 fonts-liberation libasound2 \
+  libatk-bridge2.0-0 libatk1.0-0 libcups2 libgbm1 libgtk-3-0 libnspr4
+sudo -E dpkg -i google-chrome-stable_current_amd64.deb || sudo -E apt-get install -f -y
+rm -f google-chrome-stable_current_amd64.deb
 
-sudo cp /tmp/chrome-remote.sh /opt/chrome-remote.sh
-sudo chmod +x /opt/chrome-remote.sh
+sudo mkdir -p /opt/chrome-profile
+sudo chown ${SSH_USER}:${SSH_USER} /opt/chrome-profile
 
 sudo tee /etc/systemd/system/chrome-remote.service > /dev/null <<'EOF'
 [Unit]
@@ -50,7 +50,9 @@ WantedBy=timers.target
 EOF
 
 sudo systemctl daemon-reload
+sudo systemctl enable chrome-remote.service
 sudo systemctl enable chrome-periodic.timer
+sudo systemctl start chrome-remote.service
 sudo systemctl start chrome-periodic.timer
 echo "Startup script completed at $(date)" >> /var/log/startup.log
 
