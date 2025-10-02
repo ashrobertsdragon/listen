@@ -43,7 +43,7 @@ module "functions" {
   windows             = local.is_windows
 
   depends_on = [
-    terraform_data.validate_functions_iam,
+    time_sleep.wait_for_iam_propagation,
     module.supabase
   ]
 }
