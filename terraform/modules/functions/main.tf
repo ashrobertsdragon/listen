@@ -26,7 +26,7 @@ resource "archive_file" "function_zip" {
   for_each    = toset(concat(var.function_names_http, ["tts"]))
   type        = "zip"
   source_dir  = "${path.root}/../functions/${each.value}"
-  excludes = ["${path.root}/../functions/${each.value}/pyproject.toml"]
+  excludes    = ["${path.root}/../functions/${each.value}/pyproject.toml"]
   output_path = "${path.module}/tmp/${each.value}-${local.function_hashes[each.value]}.zip"
 }
 
@@ -49,7 +49,6 @@ resource "google_cloudfunctions2_function" "http_functions" {
   build_config {
     runtime     = var.runtime
     entry_point = "main"
-    service_account = "projects/${var.project_id}/serviceAccounts/${var.functions_sa_email}"
     source {
       storage_source {
         bucket = google_storage_bucket.functions_bucket.name
@@ -64,14 +63,14 @@ resource "google_cloudfunctions2_function" "http_functions" {
     timeout_seconds       = local.function_configs[each.value].timeout
     service_account_email = var.functions_sa_email
     environment_variables = {
-      SUPABASE_URL      = var.supabase_url
-      SUPABASE_KEY      = var.supabase_key
-      GCP_PROJECT       = var.project_id
-      PUBSUB_TOPIC_TTS  = google_pubsub_topic.tts_topic.name
+      SUPABASE_URL     = var.supabase_url
+      SUPABASE_KEY     = var.supabase_key
+      GCP_PROJECT      = var.project_id
+      PUBSUB_TOPIC_TTS = google_pubsub_topic.tts_topic.name
     }
   }
 
-  depends_on = [ google_storage_bucket_object.function_object ]
+  depends_on = [google_storage_bucket_object.function_object]
 
   timeouts {
     create = "15m"
@@ -86,7 +85,6 @@ resource "google_cloudfunctions2_function" "tts_function" {
   build_config {
     runtime     = var.runtime
     entry_point = "main"
-    service_account = "projects/${var.project_id}/serviceAccounts/${var.functions_sa_email}"
     source {
       storage_source {
         bucket = google_storage_bucket.functions_bucket.name
@@ -113,8 +111,8 @@ resource "google_cloudfunctions2_function" "tts_function" {
     retry_policy   = "RETRY_POLICY_RETRY"
   }
 
-  depends_on = [ google_storage_bucket_object.function_object ]
-  
+  depends_on = [google_storage_bucket_object.function_object]
+
   timeouts {
     create = "15m"
     update = "10m"
@@ -132,22 +130,5 @@ resource "google_cloud_scheduler_job" "cleaner_job" {
     oidc_token {
       service_account_email = var.scheduler_sa_email
     }
-  }
-}
-
-resource "terraform_data" "cleanup_tmp_files" {
-  depends_on = [
-    google_cloudfunctions2_function.http_functions, 
-    google_cloudfunctions2_function.tts_function
-  ]
-
-  triggers_replace  = [
-    anytrue([ for f in fileset("${path.module}/tmp", "**") : fileexists("${path.module}/tmp/${f}") ])
-  ]
-
-  provisioner "local-exec" {
-    interpreter = var.windows ? ["cmd", "/c"] : ["bash"]
-    command     = var.windows ? "rmdir /S /Q tmp" : "rm -rf tmp"
-    working_dir = path.module
   }
 }
