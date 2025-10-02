@@ -1,16 +1,7 @@
 locals {
   functions_sa_permissions = [
-    "roles/cloudfunctions.developer",
     "roles/pubsub.publisher",
-    "roles/storage.objectCreator",
-    "roles/storage.objectViewer",
     "roles/logging.logWriter",
-    "roles/artifactregistry.reader",
-    "roles/artifactregistry.writer",
-    "roles/run.admin",
-    "roles/iam.serviceAccountUser",
-    "roles/cloudbuild.builds.editor",
-    "roles/storage.objectAdmin"
   ]
 }
 
@@ -88,44 +79,33 @@ resource "google_project_iam_member" "api_gateway_roles" {
   member  = "serviceAccount:${google_service_account.api_gateway_sa.email}"
 }
 
+data "google_project" "project" {
+  project_id = var.project_id
+}
+
+resource "google_project_iam_member" "cloudbuild_sa_storage" {
+  project = var.project_id
+  role    = "roles/storage.objectAdmin"
+  member  = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
+
+  depends_on = [google_project_service.required_apis]
+}
+
 resource "time_sleep" "wait_for_iam_propagation" {
   depends_on = [
     google_project_iam_member.functions_roles,
+    google_project_iam_member.cloudbuild_sa_storage,
     google_service_account.functions_sa
   ]
 
   create_duration = "30s"
-}
 
-data "google_service_account_iam_policy" "functions_sa_policy" {
-  service_account_id = google_service_account.functions_sa.name
-
-  depends_on = [time_sleep.wait_for_iam_propagation]
-}
-
-
-resource "terraform_data" "validate_functions_iam" {
-  depends_on = [time_sleep.wait_for_iam_propagation]
-  input      = { required_roles = join(" ", local.functions_sa_permissions) }
-
-  provisioner "local-exec" {
-    command = "${local.is_windows ? "python" : "python3"} ${path.module}/check_gcloud.py ${var.project_id} ${google_service_account.functions_sa.email} ${self.input.required_roles}"
+  triggers = {
+    functions_sa       = google_service_account.functions_sa.email
+    cloudbuild_sa      = "${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
+    project_id         = var.project_id
+    roles              = jsonencode(local.functions_sa_permissions)
   }
-
-  triggers_replace = [
-    google_service_account.functions_sa.email,
-    local.functions_sa_permissions
-  ]
-}
-
-resource "terraform_data" "functions_iam_ready" {
-  depends_on = [terraform_data.validate_functions_iam]
-
-  triggers_replace = [
-    google_service_account.functions_sa.email,
-    local.functions_sa_permissions
-  ]
-  input = { "ready" = terraform_data.validate_functions_iam.id }
 }
 
 output "functions_service_account_email" {
