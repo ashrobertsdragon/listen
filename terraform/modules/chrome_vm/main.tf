@@ -64,6 +64,7 @@ resource "local_file" "reconnect_script" {
     SSH_USER             = var.ssh_user
     VM_IP                = google_compute_instance.chrome_vm.network_interface[0].access_config[0].nat_ip
     SSH_PRIVATE_KEY_FILE = var.ssh_private_key_file
+    VM_CREATED           = google_compute_instance.chrome_vm.creation_timestamp
   })
   filename        = "${path.root}/reconnect.${var.windows ? "ps1" : "sh"}"
   file_permission = "0755"
