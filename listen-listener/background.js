@@ -46,8 +46,8 @@ chrome.storage.onChanged.addListener((changes) => {
   }
 });
 
-chrome.runtime.onStartup.addListener(handleTabs);
-chrome.runtime.onInstalled.addListener(handleTabs);
+chrome.runtime.onStartup.addListener(handleGroup);
+chrome.runtime.onInstalled.addListener(handleGroup);
 
 async function handleGroup() {
   try {
@@ -95,14 +95,14 @@ async function processGroup(groupId) {
   }
 }
 
-async function getPage(tab) {
+async function getPage(tabId) {
   await new Promise(resolve => setTimeout(resolve, 1000));
 
   const results = await chrome.scripting.executeScript({
-    target: { tab },
+    target: { tabId },
     func: () => {
       return {
-        url: tab.url,
+        url: window.location.href,
         html: document.documentElement.outerHTML
       };
     }
