@@ -15,3 +15,13 @@ variable "windows" {
   type = bool
   description = "Whether running on Windows"
 }
+variable "supabase_url" {
+  description = "Supabase project URL"
+  type        = string
+}
+
+variable "supabase_key" {
+  description = "Supabase service key"
+  type        = string
+  sensitive   = true
+}

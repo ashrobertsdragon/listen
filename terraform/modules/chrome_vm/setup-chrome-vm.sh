@@ -1,21 +1,34 @@
 #!/bin/bash
 set -e
 export DEBIAN_FRONTEND=noninteractive
-export APT_LISTCHANGES_FRONTEND=none
 
-sudo -E apt-get update -y
-sudo -E apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
-  git jq wget unzip xvfb novnc websockify x11vnc
+apt-get update -y
+apt-get install -y --no-install-recommends git wget xvfb x11vnc websockify novnc jq python3 python3-pip python3-venv
 
 wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-sudo -E apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
-  libnss3 libxss1 libappindicator3-1 libindicator7 fonts-liberation libasound2 \
-  libatk-bridge2.0-0 libatk1.0-0 libcups2 libgbm1 libgtk-3-0 libnspr4
-sudo -E dpkg -i google-chrome-stable_current_amd64.deb || sudo -E apt-get install -f -y
+dpkg -i google-chrome-stable_current_amd64.deb || apt-get install -f -y --no-install-recommends
 rm -f google-chrome-stable_current_amd64.deb
 
-sudo mkdir -p /opt/chrome-profile
-sudo chown ${SSH_USER}:${SSH_USER} /opt/chrome-profile
+mkdir -p /opt/chrome-profile
+chown ${SSH_USER}:${SSH_USER} /opt/chrome-profile
+
+mkdir -p /etc/opt/chrome/policies/managed
+cat > /etc/opt/chrome/policies/managed/sync_policy.json << 'EOF'
+{
+  "SyncDisabled": false,
+  "SyncTypesListDisabled": [
+    "bookmarks",
+    "extensions",
+    "apps",
+    "themes",
+    "passwords",
+    "autofill",
+    "preferences",
+    "readingList"
+  ]
+}
+EOF
+chown -R ${SSH_USER}:${SSH_USER} /opt/chrome-profile
 
 sudo tee /etc/systemd/system/chrome-remote.service > /dev/null <<'EOF'
 [Unit]
@@ -49,16 +62,34 @@ Persistent=true
 WantedBy=timers.target
 EOF
 
+python3 -m venv /opt/queue-venv
+/opt/queue-venv/bin/pip install requests websocket-client
+
+sudo tee /etc/systemd/system/queue-processor.service > /dev/null <<EOF
+[Unit]
+Description=URL Queue Processor
+After=network.target chrome-remote.service
+Requires=chrome-remote.service
+
+[Service]
+Type=simple
+User=${SSH_USER}
+Environment=SUPABASE_URL=${supabase_url}
+Environment=SUPABASE_KEY=${supabase_key}
+Environment=UPLOAD_ENDPOINT=${upload_function_url}
+ExecStart=/opt/queue-venv/bin/python3 /opt/queue_processor.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 sudo systemctl daemon-reload
 sudo systemctl enable chrome-remote.service
 sudo systemctl enable chrome-periodic.timer
+sudo systemctl enable queue-processor.service
 sudo systemctl start chrome-remote.service
 sudo systemctl start chrome-periodic.timer
+sudo systemctl start queue-processor.service
 echo "Startup script completed at $(date)" >> /var/log/startup.log
-
-cat > ${extension_remote_path}/config.json << EOF
-{
-  "endpoint": "${upload_function_url}?key=${api_key}",
-  "tabGroupName": "listen"
-}
-EOF
