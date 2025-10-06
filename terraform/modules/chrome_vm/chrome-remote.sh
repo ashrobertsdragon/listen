@@ -32,23 +32,18 @@ google-chrome \
   --disable-gpu \
   --no-sandbox \
   --disable-dev-shm-usage \
-  --disable-extensions-except="$EXTENSION_PATH" \
   --load-extension="$EXTENSION_PATH" \
-  --disable-component-extensions-with-background-pages \
   --user-data-dir="$PROFILE_DIR" \
   --remote-debugging-port=9222 \
-  --disable-features=Translate \
+  --disable-features=Translate,MediaRouter \
   --no-default-browser-check \
-  --disable-background-timer-throttling \
   --disable-default-apps \
   --ash-no-nudges \
   --disable-search-engine-choice-screen \
   --autoplay-policy=user-gesture-required \
-  --deny-permission-prompts \
   --disable-external-intent-requests \
   --noerrdialogs \
   --disable-notifications \
-  --disable-features=MediaRouter \
   https://accounts.google.com &
 
 CHROME_PID=$!
