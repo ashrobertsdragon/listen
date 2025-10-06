@@ -33,14 +33,23 @@ resource "google_compute_instance" "chrome_vm" {
     destination = "/tmp/listen-listener"
   }
 
+  provisioner "file" {
+    source      = "${path.module}/queue_processor.py"
+    destination = "/tmp/queue_processor.py"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "sudo cp /tmp/chrome-remote.sh /opt/chrome-remote.sh",
       "sudo chmod +x /opt/chrome-remote.sh",
+      "sudo cp /tmp/queue_processor.py /opt/queue_processor.py",
       "sudo mkdir -p ${var.extension_remote_path}",
       "sudo cp -r /tmp/listen-listener/* ${var.extension_remote_path}/ 2>/dev/null || echo 'Using git clone fallback'",
       "if [ ! -f ${var.extension_remote_path}/manifest.json ]; then git clone https://github.com/ashrobertsdragon/listen.git /tmp/repo && sudo cp -r /tmp/repo/listen-listener/* ${var.extension_remote_path}/ && rm -rf /tmp/repo; fi",
       "sudo chown -R ${var.ssh_user}:${var.ssh_user} ${var.extension_remote_path}",
+      "cat > /tmp/config.json << 'CONFIGEOF'\n{\"supabaseUrl\": \"${var.supabase_url}\", \"supabaseKey\": \"${var.supabase_key}\", \"tabGroupName\": \"listen\"}\nCONFIGEOF",
+      "sudo mv /tmp/config.json ${var.extension_remote_path}/config.json",
+      "sudo chown ${var.ssh_user}:${var.ssh_user} ${var.extension_remote_path}/config.json",
       "ls -la ${var.extension_remote_path}/"
     ]
   }
@@ -49,7 +58,8 @@ resource "google_compute_instance" "chrome_vm" {
     ssh-keys = "${var.ssh_user}:${file(var.ssh_public_key_file)}"
     startup-script = templatefile("${path.module}/setup-chrome-vm.sh", {
       upload_function_url   = var.upload_function_url
-      api_key               = var.api_key
+      supabase_url          = var.supabase_url
+      supabase_key          = var.supabase_key
       SSH_USER              = var.ssh_user
       extension_remote_path = var.extension_remote_path
       period                = var.period
@@ -81,4 +91,13 @@ resource "terraform_data" "cleanup_host_key" {
     command     = self.input.windows ? "ssh-keygen -f \"%USERPROFILE%\\.ssh\\known_hosts\" -R \"${self.input.vm_ip}\" 2>nul || echo done" : "ssh-keygen -f ~/.ssh/known_hosts -R '${self.input.vm_ip}' 2>/dev/null || true"
     interpreter = self.input.windows ? ["cmd", "/c"] : ["bash", "-c"]
   }
+}
+
+resource "local_file" "desktop_config" {
+  content = templatefile("${path.module}/desktop-config.json.tpl", {
+    SUPABASE_URL = var.supabase_url
+    SUPABASE_KEY = var.supabase_key
+  })
+  filename        = "${path.root}/../listen-listener/desktop-config.json"
+  file_permission = "0644"
 }
