@@ -67,6 +67,8 @@ module "chrome_vm" {
   extension_remote_path = var.extension_remote_path
   period                = var.vm_period
   windows               = local.is_windows
+  supabase_url          = module.supabase.supabase_rest_url
+  supabase_key          = module.supabase.supabase_key
 
   depends_on = [
     module.functions,
