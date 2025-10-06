@@ -6,13 +6,18 @@
 <body>
   <h2>Extension Settings</h2>
   <label>
-    TTS Endpoint:
-    <input type="text" id="endpointInput" placeholder="http://localhost:5000/process" />
+    Supabase URL:
+    <input type="text" id="supabaseUrlInput" placeholder="https://xxx.supabase.co/rest/v1/" style="width: 400px;" />
+  </label>
+  <br><br>
+  <label>
+    Supabase Key:
+    <input type="password" id="supabaseKeyInput" placeholder="Service role key" style="width: 400px;" />
   </label>
   <br><br>
   <label>
     Watched Tab Group Name:
-    <input type="text" id="tabGroupNameInput" placeholder="Listen" />
+    <input type="text" id="tabGroupNameInput" placeholder="listen" />
   </label>
   <br><br>
   <button id="saveBtn">Save</button>

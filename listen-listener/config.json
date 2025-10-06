@@ -1,4 +1,5 @@
 {
-  "endpoint": null,
-  "tabGroupName": "listen"
+	"supabaseUrl": null,
+	"supabaseKey": null,
+	"tabGroupName": "listen"
 }
