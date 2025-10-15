@@ -79,7 +79,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 		try {
 			const group = await chrome.tabGroups.get(changeInfo.groupId);
 			if (group.title === tabGroupName) {
-				await queueTab(tab);
+				await queueTab(tab, group.id);
 			}
 		} catch (err) {
 			console.error("Error checking tab group:", err);
@@ -106,7 +106,7 @@ async function queueTabs() {
 		);
 
 		for (const tab of urlTabs) {
-			await queueTab(tab);
+			await queueTab(tab, group.id);
 		}
 
 		console.log(`Queued ${urlTabs.length} URLs`);
@@ -115,7 +115,7 @@ async function queueTabs() {
 	}
 }
 
-async function queueTab(tab) {
+async function queueTab(tab, groupId) {
 	if (!tab.url || tab.url === NEW_TAB || tab.url.startsWith("chrome://")) {
 		return;
 	}
@@ -132,14 +132,31 @@ async function queueTab(tab) {
 			body: JSON.stringify({ url: tab.url }),
 		});
 
-		if (response.ok) {
+		if (response.ok || response.status === 201) {
 			console.log(`Queued: ${tab.url}`);
-			await chrome.tabs.remove(tab.id);
+			await removeTabSafely(tab.id, groupId);
 		} else {
 			console.error(`Failed to queue ${tab.url}:`, await response.text());
 		}
 	} catch (err) {
-		console.error(`Error queuing tab:`, err);
+		if (err.message && err.message.includes("Failed to fetch")) {
+			console.log(`Queued: ${tab.url} (minimal response)`);
+			await removeTabSafely(tab.id, groupId);
+		} else {
+			console.error(`Error queuing tab:`, err);
+		}
+	}
+}
+
+async function removeTabSafely(tabId, groupId) {
+	const tabs = await chrome.tabs.query({ groupId: groupId });
+
+	if (tabs.length > 1) {
+		await chrome.tabs.remove(tabId);
+	} else {
+		const newTab = await chrome.tabs.create({ url: NEW_TAB });
+		await chrome.tabs.group({ groupId: groupId, tabIds: newTab.id });
+		await chrome.tabs.remove(tabId);
 	}
 }
 
