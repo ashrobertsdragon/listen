@@ -13,26 +13,110 @@ A personal podcast system that converts web articles to audio files using text-t
 
 ### Processing Flow
 
-```
-Chrome Extension í Supabase url_queue (pending)
-                         ì
-                   Chrome VM Queue Processor (systemd service)
-                         ì (Chrome DevTools Protocol extracts HTML)
-                   Upload Function í Pub/Sub í TTS Function í Supabase Storage
-                         ì                                          ì
-                   Supabase Database                    RSS Feed ê Download Function
-                                                                     ì
-                                                         Cleaner (weekly cleanup)
+```mermaid
+---
+config:
+  theme: redux-dark
+  layout: elk
+  look: neo
+---
+flowchart TB
+    subgraph Queue["Queue Processor"]
+        direction TB
+        processor["Chrome DevTools<br>Protocol extracts HTML"]
+        note1["systemd service"]
+    end
+    subgraph Cleaner["Cleaner"]
+        direction LR
+        ttl["TTL check"]
+        deletion["Delete files"]
+        note2["Weekly cleanup"]
+    end
+    subgraph VM["&nbsp;&nbsp;&nbsp;&nbsp;Chrome VM"]
+        Extension["Chrome Extension"]
+        Queue
+    end
+    subgraph Functions["&nbsp;CloudRun &nbsp;Functions"]
+        direction LR
+        upload_func["Upload"]
+        tts_func["TTS"]
+        rss_func["RSS"]
+        download_func["Download"]
+        Cleaner
+    end
+    subgraph GCP["GCP"]
+        VM
+        Functions
+        PubSub["Pub/Sub Notification"]
+    end
+    subgraph tables["tables"]
+        url_table[("url_queue")]
+        listen_table[("listen")]
+        character_table[("character_count")]
+    end
+    subgraph Supabase["Supabase"]
+        direction LR
+        spacer1[" "]
+        tables
+        SupabaseStorage["Supabase Storage"]
+    end
+    A["A"] en1@--> tab["Tab added to group"]
+    tab e0@-->Extension
+    Extension et1@--> url_table
+    url_table et2@--> Queue
+    processor e1@--> upload_func
+    upload_func et3@--> listen_table
+    upload_func e3@--> PubSub e4@--> tts_func
+    tts_func es1@--> SupabaseStorage
+    tts_func e2@--> rss_func
+    character_table ed1@<--> tts_func
+    tts_func et4@--> listen_table
+    rss_func e4@--> download_func
+    rss_func et5@--> listen_table
+    download_func et6@--> listen_table
+    listen_table et7@--> Cleaner
+    ttl e5@--> deletion et8@--> listen_table
+
+    A@{ shape: sm-circ }
+    note1@{ shape: braces }
+    note2@{ shape: braces }
+    tab@{ shape: event }
+    ttl@{ shape: event }
+    processor@{ shape: extract }
+    PubSub@{ shape: event }
+    SupabaseStorage@{ shape: disk }
+    
+    classDef outerSubgraphStyle color:#d3d3d,fill:#333,font-size:30px;
+    classDef middleSubgraphStyle color:#ededed,fill:#444,font-size:20px;
+    classDef innerSubgraphStyle fill:#555;
+    classDef spacerStyle fill:#333,stroke:#333;
+    classDef nodeStyle fill:#000, stroke:#fff, color:#fff, font-size:15px;
+    classDef extractNodeStyle font-size:10px;
+    classDef edgeStyle curve:linear;
+    classDef edgeDoubleStyle curve:natural,stroke-width:2px;
+    classDef edgeTableStyle curve:natural,stroke-width:2px;
+    classDef edgeStyle,edgeDoubleStyle,edgeSplitStyle,edgeEndsStyle,edgeTextStyle,edgeTableStyle color:#000;
+    class GCP,Supabase outerSubgraphStyle;
+    class VM,Functions,tables middleSubgraphStyle;
+    class Cleaner innerSubgraphStyle;
+    class Queue,Extension,Cleaner,upload_func,tts_func,rss_func,download_func,ttl,deletion,url_table,listen_table,character_table,PubSub,SupabaseStorage nodeStyle;
+    class processor extractNodeStyle;
+    class e0,e1,e2,e3,e4,e5 edgeStyle;
+    class ed1 edgeDoubleStyle;
+    class et1,et2,et3,et4,et5,et6,et7,et8 edgeTableStyle;
+    class spacer1 spacerStyle
 ```
 
 ### Queue-Based Processing
 
 **url_queue table**: Tracks URL processing lifecycle
-- `pending` í `processing` í `completed`/`failed`
+
+- `pending` -> `processing` -> `completed`/`failed`
 - Indexed on `(status, created_at)` for efficient polling
 - Stores error messages for failed URLs
 
 **Queue Processor**: Systemd service running on Chrome VM
+
 - Polls Supabase for pending URLs (oldest first)
 - Opens URLs in headless Chrome on port 9222
 - Extracts HTML via Chrome DevTools Protocol WebSocket
@@ -40,6 +124,7 @@ Chrome Extension í Supabase url_queue (pending)
 - Updates queue status throughout processing
 
 **Local Queue Processing**: For clearing large backlogs
+
 - Terraform generates `desktop-config.json` with Supabase credentials
 - Load extension locally in Chrome to process queue faster than VM
 - Same extension code works both on VM and desktop
@@ -77,7 +162,7 @@ uv run mypy <file>           # Type checking
 
 ```bash
 # Load extension in Chrome
-# chrome://extensions/ í Load unpacked í select listen-listener/
+# chrome://extensions/ -> Load unpacked -> select listen-listener/
 
 # For local queue processing (clearing backlogs)
 # 1. Run: terraform -chdir=terraform apply
@@ -106,11 +191,13 @@ uv sync --all-packages --group dev  # Include dev dependencies
 ### Chrome VM
 
 **Systemd Services**:
+
 - `chrome-remote.service`: Headless Chrome with DevTools Protocol (port 9222)
 - `queue-processor.service`: URL queue processor (polls Supabase)
 - `chrome-periodic.timer`: Restarts Chrome every configurable period (6H/1D/15m)
 
 **Setup**: Automated via Terraform
+
 - Installs Chrome, VNC, Python dependencies
 - Configures extension with Supabase credentials
 - Starts queue processor as systemd service
@@ -128,6 +215,7 @@ uv sync --all-packages --group dev  # Include dev dependencies
 ### Supabase
 
 **Tables**:
+
 - `listen`: Podcast metadata (guid, title, audio_url, timestamps)
 - `url_queue`: URL processing queue with status tracking
 - `character_count`: TTS usage tracking for cost management
@@ -137,6 +225,7 @@ uv sync --all-packages --group dev  # Include dev dependencies
 ### Environment Variables
 
 Functions require:
+
 - `SUPABASE_URL`: Supabase project URL
 - `SUPABASE_KEY`: Supabase service key
 - `GCP_PROJECT`: Google Cloud project ID
@@ -145,6 +234,7 @@ Functions require:
 ## TTS Cost Management
 
 Intelligent cost control:
+
 - Google Cloud TTS (paid, better quality) until 4M chars/month
 - Fallback to gTTS (free) after limit
 - Character usage tracked by month/year in database
@@ -162,6 +252,7 @@ Intelligent cost control:
 ## Workspace Structure
 
 `uv` workspace with root `pyproject.toml` and function-specific configs:
+
 - `functions/cleaner`
 - `functions/download`
 - `functions/rss`
