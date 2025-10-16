@@ -34,7 +34,7 @@ resource "google_compute_instance" "chrome_vm" {
   }
 
   provisioner "file" {
-    source      = "${path.module}/queue_processor.py"
+    source      = "${path.root}/../vm/queue_processor.py"
     destination = "/tmp/queue_processor.py"
   }
 

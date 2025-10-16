@@ -1,0 +1,9 @@
+[project]
+dependencies = ["requests>=2.32.3", "websocket-client>=1.8.0"]
+description = "VM queue processor for Chrome-based URL extraction"
+name = "queue-processor"
+requires-python = ">=3.13"
+version = "0.1.0"
+
+[dependency-groups]
+dev = ["types-requests>=2.32.0"]
